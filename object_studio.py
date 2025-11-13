@@ -5,12 +5,7 @@ import threading
 import webbrowser
 import tkinter as tk
 import urllib.request
-from data.config import (
-    DEBUG,
-    CURRENT_VERSION,
-    RELEASE_API_ENDPOINT,
-    DOCUMENTATION_URL
-)
+from data.config import DEBUG, CURRENT_VERSION, RELEASE_API_ENDPOINT, DOCUMENTATION_URL
 from icons.data import (
     SMALL_ICON_DATA,
     LARGE_ICON_DATA,
@@ -164,7 +159,7 @@ class AnimationSequenceDialog:
         self._create_frames_list(content_frame)
 
         ttk.Button(
-            content_frame, text="Save Animation", command=self.save_and_close, width=15
+            content_frame, text="Save Animation", command=self._save_and_close, width=15
         ).pack(anchor=tk.CENTER, pady=(20, 0))
 
     def _create_frames_list(self, parent):
@@ -210,15 +205,15 @@ class AnimationSequenceDialog:
     def _load_initial_data(self, initial_data):
         if initial_data:
             for frame_data in initial_data:
-                self.add_frame_row(
+                self._add_frame_row(
                     frame_no=frame_data["frame"],
                     duration=frame_data["duration"],
                     is_initial_load=True,
                 )
         else:
-            self.add_frame_row(is_initial_load=True)
+            self._add_frame_row(is_initial_load=True)
 
-    def add_frame_row(
+    def _add_frame_row(
         self, frame_no=None, duration=30, insert_after=None, is_initial_load=False
     ):
         if frame_no is None:
@@ -249,14 +244,14 @@ class AnimationSequenceDialog:
         ttk.Button(
             row_frame,
             text="Remove",
-            command=lambda: self.remove_frame_row(row_frame),
+            command=lambda: self._remove_frame_row(row_frame),
             width=10,
         ).pack(side=tk.LEFT, padx=(10, 5))
 
         ttk.Button(
             row_frame,
             text="Add Frame",
-            command=lambda: self.add_frame_row(insert_after=row_frame),
+            command=lambda: self._add_frame_row(insert_after=row_frame),
             width=12,
         ).pack(side=tk.LEFT)
 
@@ -314,7 +309,7 @@ class AnimationSequenceDialog:
 
         return duration_var
 
-    def remove_frame_row(self, row_frame):
+    def _remove_frame_row(self, row_frame):
         # Check if this is the last frame
         if len(self.frame_entries) <= 1:
             messagebox.showwarning(
@@ -344,13 +339,13 @@ class AnimationSequenceDialog:
             )
 
             if response is True:
-                self.save_and_close()
+                self._save_and_close()
             elif response is False:
                 self.dialog.destroy()
         else:
             self.dialog.destroy()
 
-    def save_and_close(self):
+    def _save_and_close(self):
         # Check for empty fields first
         empty_fields = self._check_empty_fields()
         if empty_fields:
@@ -741,28 +736,6 @@ class ObjectStudioGUI:
         console_container.pack(fill=tk.BOTH, expand=True)
         self.create_console(console_container)
 
-    def check_for_update(self):
-        try:
-            with urllib.request.urlopen(RELEASE_API_ENDPOINT, timeout=5) as response:
-                if response.status != 200:
-                    raise Exception(f"HTTP Error {response.status}: {response.reason}")
-
-                data = response.read()
-                latest_version = (
-                    json.loads(data).get("name", "").replace("Version ", "")
-                )
-
-                if latest_version and CURRENT_VERSION != latest_version:
-                    messagebox.showinfo(
-                        "Update Available",
-                        f"Version {latest_version} is now available. Please update.",
-                    )
-                elif DEBUG:
-                    print("✅ Up to date.")
-        except Exception as e:
-            if DEBUG:
-                print(f"⚠️  Could not check for updates. \n{e}")
-
     def create_object_generator_tab(self, parent):
         # Basic Settings
         basic_frame = ttk.LabelFrame(
@@ -882,93 +855,6 @@ class ObjectStudioGUI:
             state="disabled",
         )
         self.generate_frames_btn.pack(fill=tk.X, pady=(10, 0), padx=10)
-
-    def prepare_frames_generator_data(self):
-        self.generate_frames_btn.config(state="disabled")
-
-        folder = self.recon_folder.get()
-
-        if not folder or not os.path.exists(folder):
-            return
-
-        self.clear_console()
-
-        (
-            riff_palette_data,
-            images_dict,
-            frames_xml_root,
-            animations_xml_root,
-            normal_mode,
-            special_cases_info,
-        ) = validate_fg_input_folder(folder)
-
-        if (
-            riff_palette_data
-            and images_dict
-            and frames_xml_root is not None
-            and animations_xml_root is not None
-        ):
-            self.fg_normal_mode = normal_mode
-            self.fg_special_cases_info = special_cases_info
-            self.fg_riff_palette_data = riff_palette_data
-            self.fg_images_dict = images_dict
-            self.fg_frames_xml_root = frames_xml_root
-            self.fg_animations_xml_root = animations_xml_root
-
-            self.generate_frames_btn.config(state="normal")
-            print("✅ Validation Successful. Ready to generate.")
-
-    def browse_recon_folder(self):
-        folder = filedialog.askdirectory(
-            initialdir=self.recon_folder.get() if self.recon_folder.get() else "."
-        )
-
-        if not folder:
-            return
-
-        self.recon_folder.set(folder)
-        self.prepare_frames_generator_data()
-
-    def generate_frames(self):
-        self.clear_console()
-        self.generate_frames_btn.config(state="disabled")
-        self.recon_browse_btn.config(state="disabled")
-        self.notebook.tab(0, state="disabled")
-        self.clear_console_btn.config(state="disabled")
-        thread = threading.Thread(target=self.generate_frames_thread)
-        thread.daemon = True
-        thread.start()
-
-    def generate_frames_thread(self):
-        try:
-            input_folder = self.recon_folder.get()
-            avoid_overlap = self.avoid_overlap.get()
-
-            print("\n🚀 Starting Frames Generation...")
-
-            data_needed_for_processing = (
-                self.fg_normal_mode,
-                self.fg_special_cases_info,
-                input_folder,
-                self.fg_riff_palette_data,
-                self.fg_images_dict,
-                self.fg_frames_xml_root,
-                self.fg_animations_xml_root,
-                avoid_overlap,
-            )
-
-            generate_frames_main(data_needed_for_processing)
-
-            print(f"\n✅  Frames Generated Successfully")
-
-        except Exception as e:
-            print(f"\n❌ Error during generation:\n{str(e)}")
-
-        finally:
-            self.root.after(0, lambda: self.recon_browse_btn.config(state="normal"))
-            self.root.after(0, lambda: self.notebook.tab(0, state="normal"))
-            self.root.after(0, lambda: self.clear_console_btn.config(state="normal"))
-            self.root.after(0, lambda: self.generate_frames_btn.config(state="normal"))
 
     def create_basic_settings(self, parent):
         row = 0
@@ -1197,6 +1083,28 @@ class ObjectStudioGUI:
         )
         self.clear_console_btn.place(relx=1.0, rely=1.0, anchor=tk.SE, x=-30, y=-10)
 
+    def check_for_update(self):
+        try:
+            with urllib.request.urlopen(RELEASE_API_ENDPOINT, timeout=5) as response:
+                if response.status != 200:
+                    raise Exception(f"HTTP Error {response.status}: {response.reason}")
+
+                data = response.read()
+                latest_version = (
+                    json.loads(data).get("name", "").replace("Version ", "")
+                )
+
+                if latest_version and CURRENT_VERSION != latest_version:
+                    messagebox.showinfo(
+                        "Update Available",
+                        f"Version {latest_version} is now available. Please update.",
+                    )
+                elif DEBUG:
+                    print("✅ Up to date.")
+        except Exception as e:
+            if DEBUG:
+                print(f"⚠️  Could not check for updates. \n{e}")
+
     def browse_folder(self):
         folder = filedialog.askdirectory(
             initialdir=self.input_folder.get() if self.input_folder.get() else "."
@@ -1217,7 +1125,7 @@ class ObjectStudioGUI:
         self.prepare_object_generator_data()
 
         if prev_animation_group:
-            result = self._validate_config_values(
+            result = self.validate_config_values(
                 animation_group=prev_animation_group,
             )
 
@@ -1235,6 +1143,17 @@ class ObjectStudioGUI:
             self.animation_group = [[{"frame": min_frame, "duration": 30}]]
 
         self.update_animation_group_listbox()
+
+    def browse_recon_folder(self):
+        folder = filedialog.askdirectory(
+            initialdir=self.recon_folder.get() if self.recon_folder.get() else "."
+        )
+
+        if not folder:
+            return
+
+        self.recon_folder.set(folder)
+        self.prepare_frames_generator_data()
 
     def add_animation_sequence(self):
         if not self.og_available_frames:
@@ -1263,7 +1182,7 @@ class ObjectStudioGUI:
 
         # Find which group the selected item belongs to
         selected_line = selection[0]
-        group_idx = self._get_group_index_from_line(selected_line)
+        group_idx = self.get_group_index_from_line(selected_line)
 
         dialog = AnimationSequenceDialog(
             self.root,
@@ -1292,7 +1211,7 @@ class ObjectStudioGUI:
 
         if is_frame:
             # === DELETING A FRAME ===
-            group_idx, frame_idx, frame_no = self._get_frame_indices_from_line(
+            group_idx, frame_idx, frame_no = self.get_frame_indices_from_line(
                 selected_line
             )
 
@@ -1324,7 +1243,7 @@ class ObjectStudioGUI:
 
         else:
             # === DELETING AN ENTIRE SEQUENCE ===
-            group_idx = self._get_group_index_from_line(selected_line)
+            group_idx = self.get_group_index_from_line(selected_line)
 
             if group_idx is None:
                 return
@@ -1358,7 +1277,7 @@ class ObjectStudioGUI:
             self.animation_group,
         )
 
-    def _get_group_index_from_line(self, line_idx):
+    def get_group_index_from_line(self, line_idx):
         current_line = 0
 
         for group_idx, group in enumerate(self.animation_group):
@@ -1375,7 +1294,7 @@ class ObjectStudioGUI:
 
         return None
 
-    def _get_frame_indices_from_line(self, line_idx):
+    def get_frame_indices_from_line(self, line_idx):
         current_line = 0
 
         for group_idx, group in enumerate(self.animation_group):
@@ -1405,80 +1324,6 @@ class ObjectStudioGUI:
                 self.anim_group_listbox.insert(
                     tk.END, f"{prefix}Frame {frame_num}: {duration}"
                 )
-
-    def prepare_object_generator_data(self):
-        self.generate_object_btn.config(state="disabled")
-
-        # Reset Frame Images for Viewer
-        self.frame_number_to_image = {}
-
-        # Reset validation data
-        self.og_images_dict = {}
-        self.og_shared_palette = None
-        self.og_max_colors_used = None
-        self.og_image_height = None
-        self.og_image_width = None
-        self.og_available_frames = []
-
-        folder = self.input_folder.get()
-
-        if not folder or not os.path.exists(folder):
-            return
-
-        self.clear_console()
-
-        (
-            images_dict,
-            common_image_size,
-            original_shared_palette,
-            max_colors_used,
-            available_frames,
-        ) = validate_og_input_folder(folder)
-
-        if (
-            images_dict
-            and common_image_size
-            and original_shared_palette
-            and available_frames
-        ):
-            self.og_images_dict = images_dict
-            self.og_image_width = common_image_size[0]
-            self.og_image_height = common_image_size[1]
-            self.og_shared_palette = original_shared_palette
-            self.og_max_colors_used = max_colors_used
-            self.og_available_frames = available_frames
-
-            local_frame_number_to_image = {}
-            frames_found = {}
-
-            for data in self.og_images_dict.values():
-                frame_num, layer_num, _ = data["frame_layer_palette_tuple"]
-                frames_found.setdefault(frame_num, []).append(
-                    (layer_num, data["image_data"])
-                )
-
-            # Composite each frame for viewer
-            frame_numbers = sorted(frames_found.keys())
-            for frame_no in frame_numbers:
-                layers = sorted(frames_found[frame_no], key=lambda x: x[0])
-                base = None
-                for _, img in layers:
-                    base = img if base is None else Image.alpha_composite(base, img)
-
-                local_frame_number_to_image[frame_no] = ImageTk.PhotoImage(base)
-
-            self.frame_number_to_image = local_frame_number_to_image
-
-            if DEBUG:
-                print(
-                    f"✅ Composite images created for frames: {self.og_available_frames}\n"
-                )
-
-            print(f"✅ Available Frames: {self.og_available_frames}")
-
-            # Enable process button
-            self.generate_object_btn.config(state="normal")
-            print("\n✅ Validation Successful. Ready to generate.")
 
     def clear_console(self, event=None):
         self.console_text.config(state="normal")
@@ -1535,7 +1380,7 @@ class ObjectStudioGUI:
             self.prepare_object_generator_data()
 
             # ---- Validate config values ----
-            result = self._validate_config_values(
+            result = self.validate_config_values(
                 animation_group=config.get("animation_group"),
                 min_density=config.get("min_density"),
                 displace_x=config.get("displace_x"),
@@ -1627,7 +1472,7 @@ class ObjectStudioGUI:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load config: {str(e)}")
 
-    def _validate_config_values(
+    def validate_config_values(
         self,
         animation_group=None,
         min_density=None,
@@ -1692,9 +1537,7 @@ class ObjectStudioGUI:
 
                 for label, value in scan_chunk_sizes.items():
                     if label not in valid_labels:
-                        invalid_chunk_errors.append(
-                            f"'{label}': Invalid chunk size."
-                        )
+                        invalid_chunk_errors.append(f"'{label}': Invalid chunk size.")
                     elif not isinstance(value, bool):
                         invalid_chunk_errors.append(
                             f"'{label}': Must be true or false. Received: {type(value).__name__}."
@@ -1790,6 +1633,80 @@ class ObjectStudioGUI:
             "valid_values": valid_values,
         }
 
+    def prepare_object_generator_data(self):
+        self.generate_object_btn.config(state="disabled")
+
+        # Reset Frame Images for Viewer
+        self.frame_number_to_image = {}
+
+        # Reset validation data
+        self.og_images_dict = {}
+        self.og_shared_palette = None
+        self.og_max_colors_used = None
+        self.og_image_height = None
+        self.og_image_width = None
+        self.og_available_frames = []
+
+        folder = self.input_folder.get()
+
+        if not folder or not os.path.exists(folder):
+            return
+
+        self.clear_console()
+
+        (
+            images_dict,
+            common_image_size,
+            original_shared_palette,
+            max_colors_used,
+            available_frames,
+        ) = validate_og_input_folder(folder)
+
+        if (
+            images_dict
+            and common_image_size
+            and original_shared_palette
+            and available_frames
+        ):
+            self.og_images_dict = images_dict
+            self.og_image_width = common_image_size[0]
+            self.og_image_height = common_image_size[1]
+            self.og_shared_palette = original_shared_palette
+            self.og_max_colors_used = max_colors_used
+            self.og_available_frames = available_frames
+
+            local_frame_number_to_image = {}
+            frames_found = {}
+
+            for data in self.og_images_dict.values():
+                frame_num, layer_num, _ = data["frame_layer_palette_tuple"]
+                frames_found.setdefault(frame_num, []).append(
+                    (layer_num, data["image_data"])
+                )
+
+            # Composite each frame for viewer
+            frame_numbers = sorted(frames_found.keys())
+            for frame_no in frame_numbers:
+                layers = sorted(frames_found[frame_no], key=lambda x: x[0])
+                base = None
+                for _, img in layers:
+                    base = img if base is None else Image.alpha_composite(base, img)
+
+                local_frame_number_to_image[frame_no] = ImageTk.PhotoImage(base)
+
+            self.frame_number_to_image = local_frame_number_to_image
+
+            if DEBUG:
+                print(
+                    f"✅ Composite images created for frames: {self.og_available_frames}\n"
+                )
+
+            print(f"✅ Available Frames: {self.og_available_frames}")
+
+            # Enable process button
+            self.generate_object_btn.config(state="normal")
+            print("\n✅ Validation Successful. Ready to generate.")
+
     def generate_object(self):
         self.clear_console()
         self.generate_object_btn.config(state="disabled")
@@ -1859,6 +1776,82 @@ class ObjectStudioGUI:
             self.root.after(0, lambda: self.notebook.tab(1, state="normal"))
             self.root.after(0, lambda: self.clear_console_btn.config(state="normal"))
             self.root.after(0, lambda: self.generate_object_btn.config(state="normal"))
+
+    def prepare_frames_generator_data(self):
+        self.generate_frames_btn.config(state="disabled")
+
+        folder = self.recon_folder.get()
+
+        if not folder or not os.path.exists(folder):
+            return
+
+        self.clear_console()
+
+        (
+            riff_palette_data,
+            images_dict,
+            frames_xml_root,
+            animations_xml_root,
+            normal_mode,
+            special_cases_info,
+        ) = validate_fg_input_folder(folder)
+
+        if (
+            riff_palette_data
+            and images_dict
+            and frames_xml_root is not None
+            and animations_xml_root is not None
+        ):
+            self.fg_normal_mode = normal_mode
+            self.fg_special_cases_info = special_cases_info
+            self.fg_riff_palette_data = riff_palette_data
+            self.fg_images_dict = images_dict
+            self.fg_frames_xml_root = frames_xml_root
+            self.fg_animations_xml_root = animations_xml_root
+
+            self.generate_frames_btn.config(state="normal")
+            print("✅ Validation Successful. Ready to generate.")
+
+    def generate_frames(self):
+        self.clear_console()
+        self.generate_frames_btn.config(state="disabled")
+        self.recon_browse_btn.config(state="disabled")
+        self.notebook.tab(0, state="disabled")
+        self.clear_console_btn.config(state="disabled")
+        thread = threading.Thread(target=self.generate_frames_thread)
+        thread.daemon = True
+        thread.start()
+
+    def generate_frames_thread(self):
+        try:
+            input_folder = self.recon_folder.get()
+            avoid_overlap = self.avoid_overlap.get()
+
+            print("\n🚀 Starting Frames Generation...")
+
+            data_needed_for_processing = (
+                self.fg_normal_mode,
+                self.fg_special_cases_info,
+                input_folder,
+                self.fg_riff_palette_data,
+                self.fg_images_dict,
+                self.fg_frames_xml_root,
+                self.fg_animations_xml_root,
+                avoid_overlap,
+            )
+
+            generate_frames_main(data_needed_for_processing)
+
+            print(f"\n✅  Frames Generated Successfully")
+
+        except Exception as e:
+            print(f"\n❌ Error during generation:\n{str(e)}")
+
+        finally:
+            self.root.after(0, lambda: self.recon_browse_btn.config(state="normal"))
+            self.root.after(0, lambda: self.notebook.tab(0, state="normal"))
+            self.root.after(0, lambda: self.clear_console_btn.config(state="normal"))
+            self.root.after(0, lambda: self.generate_frames_btn.config(state="normal"))
 
     def redirect_stdout_to_console(self):
         console_widget = self.console_text
