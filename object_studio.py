@@ -122,9 +122,8 @@ class AnimationSequenceDialog:
     def _build_window(self, parent, title):
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
-        self.dialog.geometry("650x550")
+        self.dialog.geometry("650x600")
         self.dialog.transient(parent)
-        self.dialog.resizable(False, False)
         self.dialog.grab_set()
         self.dialog.focus_set()
         self.dialog.protocol("WM_DELETE_WINDOW", self._on_close_attempt)
@@ -655,7 +654,7 @@ class ObjectStudioGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Object Studio")
-        self.root.geometry("1000x680")
+        self.root.geometry("1100x680")
 
         small_icon = tk.PhotoImage(data=SMALL_ICON_DATA)
         large_icon = tk.PhotoImage(data=LARGE_ICON_DATA)
@@ -699,14 +698,12 @@ class ObjectStudioGUI:
         self.root.after(100, self.check_for_update)
 
     def create_widgets(self):
-        # Main container with two columns
-        main_container = ttk.Frame(self.root)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        paned_window = tk.PanedWindow(self.root, orient=tk.HORIZONTAL, sashwidth=10)
+        paned_window.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Left column  WITH TABS
-        left_frame = ttk.Frame(main_container, width=420)
-        left_frame.pack(side=tk.LEFT, fill=tk.BOTH, padx=(0, 5))
-        left_frame.pack_propagate(False)
+        # LEFT COLUMN
+        left_frame = ttk.Frame(paned_window)
+        paned_window.add(left_frame, minsize=500)
 
         self.notebook = ttk.Notebook(left_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
@@ -715,6 +712,8 @@ class ObjectStudioGUI:
         # Tab 1
         object_generator_tab = ttk.Frame(self.notebook, padding=(10, 0))
         self.notebook.add(object_generator_tab, text="Object Generator")
+        object_generator_tab.columnconfigure(0, weight=1)
+        object_generator_tab.rowconfigure(1, weight=1)
         self.create_object_generator_tab(object_generator_tab)
 
         # Tab 2
@@ -722,11 +721,10 @@ class ObjectStudioGUI:
         self.notebook.add(frames_generator_tab, text="Frames Generator")
         self.create_frames_generator_tab(frames_generator_tab)
 
-        # Right column - Console
-        right_frame = ttk.Frame(main_container)
-        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        # RIGHT COLUMN
+        right_frame = ttk.Frame(paned_window)
+        paned_window.add(right_frame, minsize=500)
 
-        # Info button above console (aligned to right)
         info_btn = ttk.Button(
             right_frame, text="About", command=lambda: InfoDialog(self.root)
         )
@@ -741,27 +739,32 @@ class ObjectStudioGUI:
         basic_frame = ttk.LabelFrame(
             parent, text="Basic Settings", style="Bold.TLabelframe", padding=(10, 5)
         )
-        basic_frame.pack(fill=tk.BOTH, pady=10)
+        basic_frame.grid(row=0, column=0, sticky="ew", pady=10)
+        basic_frame.columnconfigure(1, weight=1)
         self.create_basic_settings(basic_frame)
 
         # Animation Settings
         anim_frame = ttk.LabelFrame(
             parent, text="Animation Settings", style="Bold.TLabelframe", padding=(10, 0)
         )
-        anim_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        anim_frame.grid(row=1, column=0, sticky="nsew", pady=(0, 10))
+        anim_frame.rowconfigure(0, weight=1)
+        anim_frame.columnconfigure(0, weight=1)
         self.create_animation_settings(anim_frame)
 
         # Config buttons
         config_frame = ttk.Frame(parent)
-        config_frame.pack(fill=tk.X, pady=(0, 10), padx=10)
+        config_frame.grid(row=2, column=0, sticky="ew", pady=(0, 10), padx=10)
+        config_frame.columnconfigure(0, weight=1)
+        config_frame.columnconfigure(1, weight=1)
 
         self.load_config_btn = ttk.Button(
             config_frame, text="Load Config", command=self.load_config
         )
-        self.load_config_btn.pack(side=tk.LEFT, padx=2, fill=tk.X, expand=True)
+        self.load_config_btn.grid(row=0, column=0, sticky="ew", padx=(0, 2))
 
-        ttk.Button(config_frame, text="Save Config", command=self.save_config).pack(
-            side=tk.LEFT, padx=2, fill=tk.X, expand=True
+        ttk.Button(config_frame, text="Save Config", command=self.save_config).grid(
+            row=0, column=1, sticky="ew", padx=(2, 0)
         )
 
         # Process button
@@ -772,13 +775,13 @@ class ObjectStudioGUI:
             style="Large.TButton",
             state="disabled",
         )
-        self.generate_object_btn.pack(fill=tk.X, padx=10, pady=(0, 10))
+        self.generate_object_btn.grid(
+            row=3, column=0, sticky="ew", padx=10, pady=(0, 10)
+        )
 
     def create_frames_generator_tab(self, parent):
-        # Reconstructor folder variable
         self.recon_folder = tk.StringVar(value="")
 
-        # Instructions label
         ttk.Label(
             parent, text="Select a folder containing:", font=("Arial", 12, "bold")
         ).pack(anchor=tk.W, pady=10)
@@ -797,7 +800,6 @@ class ObjectStudioGUI:
         file_structure_listbox.insert(tk.END, "├── frames.xml")
         file_structure_listbox.insert(tk.END, "└── animations.xml")
 
-        # Disable interaction
         file_structure_listbox.config(state=tk.DISABLED)
 
         # Folder selection frame
@@ -813,7 +815,7 @@ class ObjectStudioGUI:
         )
         self.recon_browse_btn.pack(side=tk.LEFT)
 
-        # Avoid Overlap Settings Frame
+        # Avoid Overlap Settings
         overlap_frame = ttk.LabelFrame(
             parent, text="Avoid Overlap", style="Bold.TLabelframe", padding=10
         )
@@ -846,7 +848,6 @@ class ObjectStudioGUI:
             value="none",
         ).pack(anchor=tk.W, pady=2)
 
-        # Generate Button
         self.generate_frames_btn = ttk.Button(
             parent,
             text="Generate Frames",
@@ -882,7 +883,8 @@ class ObjectStudioGUI:
             row=row, column=0, sticky=tk.W, pady=5
         )
         density_frame = ttk.Frame(parent)
-        density_frame.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        density_frame.grid(row=row, column=1, sticky=tk.EW, pady=5, padx=5)
+        density_frame.columnconfigure(0, weight=1)
 
         def update_density_label(v):
             self.density_label.config(text=f"{self.min_density.get()}%")
@@ -895,10 +897,10 @@ class ObjectStudioGUI:
             orient=tk.HORIZONTAL,
             length=230,
             command=update_density_label,
-        ).pack(side=tk.LEFT)
+        ).grid(row=0, column=0, sticky="ew", padx=(0, 5))
 
         self.density_label = tk.Label(density_frame, text=f"50%", width=5)
-        self.density_label.pack(side=tk.LEFT, padx=5)
+        self.density_label.grid(row=0, column=1)
 
         # Displace Object X and Y in one row
         row += 1
@@ -907,29 +909,29 @@ class ObjectStudioGUI:
         )
 
         displace_frame = ttk.Frame(parent)
-        displace_frame.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
+        displace_frame.grid(row=row, column=1, sticky=tk.EW, pady=5, padx=5)
+        displace_frame.columnconfigure(1, weight=1)
+        displace_frame.columnconfigure(3, weight=1)
 
-        ttk.Label(displace_frame, text="X:").pack(side=tk.LEFT)
+        ttk.Label(displace_frame, text="X:").grid(row=0, column=0, sticky="w")
         ttk.Spinbox(
             displace_frame,
             from_=-999999,
             to=999999,
             textvariable=self.displace_x,
-            width=16,
             validate="key",
             validatecommand=self.validate_integer_input,
-        ).pack(side=tk.LEFT, padx=(2, 10))
+        ).grid(row=0, column=1, sticky="ew", padx=(2, 10))
 
-        ttk.Label(displace_frame, text="Y:").pack(side=tk.LEFT)
+        ttk.Label(displace_frame, text="Y:").grid(row=0, column=2, sticky="w")
         ttk.Spinbox(
             displace_frame,
             from_=-999999,
             to=999999,
             textvariable=self.displace_y,
-            width=16,
             validate="key",
             validatecommand=self.validate_integer_input,
-        ).pack(side=tk.LEFT)
+        ).grid(row=0, column=3, sticky="ew", padx=(2, 0))
 
         # Quick select buttons for Displacement
         row += 1
@@ -980,7 +982,6 @@ class ObjectStudioGUI:
         scan_frame = ttk.Frame(parent)
         scan_frame.grid(row=row, column=1, sticky=tk.W, pady=5, padx=5)
 
-        # Initialize scan option variables
         self.intrascan_var = tk.BooleanVar(value=True)
         self.interscan_var = tk.BooleanVar(value=True)
 
@@ -1001,15 +1002,12 @@ class ObjectStudioGUI:
 
         row += 1
 
-        # Create frame for checkboxes
         checkbox_container = ttk.Frame(parent)
         checkbox_container.grid(row=row, column=0, columnspan=2, sticky=tk.EW, pady=5)
 
-        # Create checkbox variables
         self.scan_chunk_sizes = {}
         labels = [f"{w}x{h}" for w, h in CHUNK_SIZES]
 
-        # Create grid
         for i, label in enumerate(labels):
             cb_row = i // 6
             cb_col = i % 6
@@ -1021,48 +1019,52 @@ class ObjectStudioGUI:
             cb = ttk.Checkbutton(checkbox_container, text=label, variable=var)
             cb.grid(row=cb_row, column=cb_col, sticky=tk.W, padx=5, pady=5)
 
-        # Configure column weights
-        parent.columnconfigure(1, weight=1)
+            checkbox_container.columnconfigure(cb_col, weight=1)
 
     def create_animation_settings(self, parent):
         # Animation group list
         list_frame = ttk.Frame(parent)
-        list_frame.pack(fill=tk.BOTH, expand=True, pady=(10, 0))
+        list_frame.grid(row=0, column=0, sticky="nsew", pady=(10, 0), padx=10)
+        list_frame.columnconfigure(0, weight=1)
+        list_frame.rowconfigure(0, weight=1)
 
         scrollbar = ttk.Scrollbar(list_frame)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.anim_group_listbox = tk.Listbox(
             list_frame, yscrollcommand=scrollbar.set, height=8
         )
-        self.anim_group_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.anim_group_listbox.grid(row=0, column=0, sticky="nsew")
         scrollbar.config(command=self.anim_group_listbox.yview)
 
-        # Buttons
+        # Animation Buttons
         btn_frame = ttk.Frame(parent)
-        btn_frame.pack(fill=tk.X, pady=(10, 18))
+        btn_frame.grid(row=1, column=0, sticky="ew", pady=(10, 18), padx=10)
+
+        for i in range(4):
+            btn_frame.columnconfigure(i, weight=1)
 
         ttk.Button(
             btn_frame,
             text="Add Animation",
             command=self.add_animation_sequence,
             width=14,
-        ).pack(side=tk.LEFT, padx=2)
+        ).grid(row=0, column=0, sticky="ew", padx=2)
         ttk.Button(
             btn_frame,
             text="Edit Animation",
             command=self.edit_animation_sequence,
             width=14,
-        ).pack(side=tk.LEFT, padx=2)
+        ).grid(row=0, column=1, sticky="ew", padx=2)
         ttk.Button(
             btn_frame, text="Delete", command=self.delete_frame_or_sequence, width=8
-        ).pack(side=tk.LEFT, padx=2)
+        ).grid(row=0, column=2, sticky="ew", padx=2)
         ttk.Button(
             btn_frame,
             text="View Animations",
             command=self.view_animation_sequences,
             width=16,
-        ).pack(side=tk.LEFT, padx=2)
+        ).grid(row=0, column=3, sticky="ew", padx=2)
 
         self.animation_group = []
         self.update_animation_group_listbox()

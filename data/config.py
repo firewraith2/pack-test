@@ -1,6 +1,6 @@
 DEBUG = False
 
-CURRENT_VERSION = "1.0.0"
+CURRENT_VERSION = "1.1.0"
 
 DOCUMENTATION_URL = (
     "https://github.com/WraithFire/object-studio/blob/master/docs/README.md"
