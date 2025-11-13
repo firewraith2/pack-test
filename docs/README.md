@@ -133,9 +133,9 @@ All cel images must meet the following requirements to be compatible with the **
 1. **Image Format**
 
     - Images must be **indexed PNGs** — not RGB or RGBA formats.
+    - All cel images must share the **same global palette**, with a maximum of **192 colors** (12 palette groups).
 
 2. **Image Dimensions**
-    - Dimensions must be **multiples of 8 pixels**.
     - All cel images must have the **same dimensions**.  
       If `Frame-0-Layer-0.png` is 160×160, then **every cel image** in the set must also be 160×160.  
       Mixing image sizes will cause validation errors.
