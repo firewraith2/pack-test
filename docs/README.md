@@ -20,6 +20,7 @@
     -   [How to Use with `SetAnimation()`](#how-to-use-with-setanimation)
 -   [Frames Generator](#frames-generator)
     -   [Folder Requirements](#folder-requirements)
+        -   [Tile Mode Objects](#tile-mode-objects)
     -   [Using the Frames Generator](#using-the-frames-generator)
     -   [Frames Generator Configurations](#frames-generator-configurations)
         -   [Avoid Overlap](#avoid-overlap)
@@ -353,6 +354,18 @@ your_folder/
 └── animations.xml
 ```
 
+### Tile Mode Objects
+
+The following objects require **special handling**.
+If you want to generate frames for any of them, your folder must be named exactly the same as the **object name**, otherwise the Frames Generator cannot process them correctly:
+
+```
+s01p01a1, s01p01a2, s08p01a1, s13p03a1, s13p03a2, s20p01a1, s20p01a2,
+v01p05b1, v01p05b2, v01p05b3, v04p03a1, v19p06a1, v37p02a1
+```
+
+These are the only objects that need this special treatment. For all other objects, folder names can be anything.
+
 **Where to get these files:**
 
 These files are typically:
@@ -425,7 +438,7 @@ The unrestricted mode. No overlap detection is performed.
 
 -   All chunks are placed on a single layer per frame, regardless of their positions or palette groups
 
-## Bulk Conversion
+# Bulk Conversion
 
 If you’re running **Object Studio** from source, you can perform **bulk conversions** using the built-in helper functions from the `generators` modules.
 
