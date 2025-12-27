@@ -1,11 +1,11 @@
 DEBUG = False
 
-CURRENT_VERSION = "1.1.2"
+CURRENT_VERSION = "1.0.0"
 
 DOCUMENTATION_URL = (
-    "https://github.com/WraithFire/object-studio/blob/master/docs/README.md"
+    "https://github.com/WraithFire/wanimation-studio/blob/master/docs/README.md"
 )
 
 RELEASE_API_ENDPOINT = (
-    "https://api.github.com/repos/WraithFire/object-studio/releases/latest"
+    "https://api.github.com/repos/WraithFire/wanimation-studio/releases/latest"
 )

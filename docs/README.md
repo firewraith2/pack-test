@@ -1,44 +1,39 @@
-# Object Studio Documentation
+# Wanimation Studio Documentation
 
 ## Table of Contents
 
--   [Object Generator](#object-generator)
+-   [WAN Files](#wan-files)
+-   [Sprite Format](#sprite-format)
     -   [What is a Cel?](#what-is-a-cel)
-    -   [Sprite Format](#sprite-format)
-        -   [Palette Info](#palette-info)
-        -   [Creation Modes](#creation-modes)
+    -   [Palette Info](#palette-info)
+    -   [Creation Modes](#creation-modes)
     -   [Export Format](#export-format)
-        -   [Filename Requirements](#filename-requirements)
-        -   [Image Requirements](#image-requirements)
-        -   [Exporting from Aseprite (or Other Tools)](#exporting-from-aseprite-or-other-tools)
-    -   [Using the Object Generator](#using-the-object-generator)
-    -   [Object Generator Configurations](#object-generator-configurations)
-        -   [Min Density](#min-density)
-        -   [Displace Object](#displace-object)
-        -   [Scan Options](#scan-options)
-        -   [Animation Settings](#animation-settings)
+-   [Sprite Generator](#sprite-generator)
+    -   [Folder Requirements](#folder-requirements)
+    -   [Using the Sprite Generator](#using-the-sprite-generator)
+    -   [Sprite Generator Configurations](#sprite-generator-configurations)
     -   [How to Use with `SetAnimation()`](#how-to-use-with-setanimation)
 -   [Frames Generator](#frames-generator)
     -   [Folder Requirements](#folder-requirements)
-        -   [Tile Mode Objects](#tile-mode-objects)
     -   [Using the Frames Generator](#using-the-frames-generator)
     -   [Frames Generator Configurations](#frames-generator-configurations)
-        -   [Avoid Overlap](#avoid-overlap)
 -   [Bulk Conversion](#bulk-conversion)
 
-# Object Generator
+# WAN Files
 
-Objects in **Explorers of Sky** have a lot of potential — but **SkyTemple** currently only allows importing a single-frame, single-layer image.
+**WAN** is a binary sprite format used by **Pokémon Mystery Dungeon: Explorers of Sky** to store animated sprites. Most animated sprites, from objects to Pokémon sprites, are stored as WAN files.
 
-This means we’re limited to a **static, 16-color image**, losing the ability to animate, use layers, or take advantage of multiple palette groups.
+WAN files come in three different sprite types:
 
-The **Object Generator** removes those limits.
+- **Type 0**: Used for **objects** and **common animations**.
+- **Type 1**: Used for **Pokémon sprites**. These are stored in the `MONSTER/monster.bin`, `MONSTER/m_ground.bin`, and `MONSTER/m_attack.bin` pack files.
+- **Type 2**: Used for **effects**, including move animations and script effects. These are stored in the `EFFECT/effect.bin` pack file.
 
-With it, you can easily create **animated, multi-layered, multi-palette objects** that can be imported directly into **SkyTemple** or converted back into `.wan` format using **GFXCrunch** for in-game use.
+# Sprite Format
 
-Before continuing, it’s important to understand some basics about **cels**, since they’re referenced multiple times throughout this guide.
+Before diving into the generators, it helps to understand some basics about **cels** and the sprite formats used by **Type 0** and **Type 2** WAN files.
 
-### What is a Cel?
+## What is a Cel?
 
 <div align="center">
     <img src="images/cel.png" alt="Cel Example" />
@@ -48,21 +43,69 @@ A **cel** (short for _celluloid_) represents a single image used in a specific f
 
 As you can see in the image above, each frame in this sprite is made up of **three cels** stacked on top of each other to form the final frame.
 
-## Sprite Format
+## Palette
 
-### Palette Info
+The game uses palette slots to store colors. There are 16 slots, each holding **16 colors**, for a total of **256 colors**. But the first color in each slot is always transparent, so you actually get **240** usable colors.
 
 <div align="center">
     <img src="images/palette.png" alt="Palette Example" />
 </div>
 
--   The game uses **12 palette slots** for objects. Each slot contains **16 colors**, with the **first color always transparent**.
--   This gives a total of **192 colors**, but since 12 are reserved for transparency, there are **180 unique usable colors**.
--   These **12 palette slots** are shared across all objects on screen — meaning the total combined palette groups of all visible objects **must not exceed 12**.
+The game shares these slots among various elements. and some slots are occupied by base animation colors.
 
-### Creation Modes
+### Ground Mode
 
-The tool supports **two modes** for sprite creation:
+In ground mode, these slots is shared between base ground effects and objects.
+
+**Base Ground Effects**
+
+<div align="center">
+    <img src="images/base_ground_effects.gif" alt="Base Ground Effects Example" />
+</div>
+
+-   The game reserves **4 palette slots** for base ground effects, giving you **64 colors** but since 4 are reserved for transparency, there are **60 unique usable colors**.
+
+**Objects**
+
+<div align="center">
+    <img src="images/objects.gif" alt="Objects Example" />
+</div>
+
+-   The game reserves **12 palette slots** for objects, This gives a total of **192 colors**, but since 12 are reserved for transparency, there are **180 unique usable colors**.
+
+-   These **12 slots** are shared across all objects on screen — so the total combined palette groups of all visible objects **can't exceed 12**.
+
+-   Objects can also use colors from 4 palette slots reserved for base ground effects so thretically each object can have maximum of **240 visible colors**.
+
+### Dungeon Mode
+
+In dungeon mode, these slots is shared between base dungeon effects and standalone effects.
+
+**Base Dungeon Effects**
+
+<div align="center">
+    <img src="images/base_dungeon_effects.gif" alt="Base Dungeon Effects Example" />
+</div>
+
+-   The game reserves **13 palette slots** for base dungeon effects, giving you **208 colors** but since 13 are reserved for transparency, there are **195 unique usable colors**.
+
+**Standalone Effects**
+
+<div align="center">
+    <img src="images/standalone_effects.gif" alt="Standalone Effects Example" />
+</div>
+
+-   The game reserves **3 palette slots** for standalone effects, giving you **48 colors** but since 3 are reserved for transparency, there are **45 unique usable colors**.
+
+-   Standalone effects can also use colors from 13 palette slots reserved for base dungeon effects so thretically each standalone effect can have maximum of **240 visible colors**.
+
+## Image Creation
+
+The palette of the image depend on whether you wanna use base animation palette slot or not. like if you wanna use base animation palette then you need to make your image with 256 colors
+
+if you dont wanna use base animation palette then you need to make your image according to type of wan file you are creating like 12 slots for objects or 3 slots for move effects
+
+The **Sprite Generator** accepts frame images in **two modes**:
 
 -   **Single-Cel Frame Mode**
 -   **Multi-Cel Frame Mode**
@@ -75,9 +118,9 @@ In Single-Cel Frame Mode, each frame is made up of **just one cel**.
 
 -   **Advantages:**
 
-    -   You can use all **180 available colors** freely anywhere in the cel.
+    -   You can use all **available colors** freely anywhere in the cel.
     -   Fewer cels to manage and export — only one per frame.
-    -   Great for **quick object creation** or when you don’t want to deal with multiple cels.
+    -   Great for **quick sprite creation** or when you don’t want to deal with multiple cels.
 
 -   **Disadvantages:**
 
@@ -93,11 +136,11 @@ In Multi-Cel Frame Mode, each frame is made up of **multiple cels**, with each c
 
     -   Allows for **efficient chunk reuse** — repeated chunks are easier to detect across frames.
     -   Helps **reduce memory usage per frame**, since shared chunks can be reused.
-    -   Ideal for **objects that appear alongside others** in a scene, since it leaves more memory free for additional objects.
+    -   Ideal for **sprites that appear alongside others** in a scene, since it leaves more memory free for additional sprites.
 
 -   **Disadvantages:**
 
-    -   Each cel can use **only one palette group** (out of the 12 available).
+    -   Each cel can use **only one palette group**.
     -   Managing multiple cels can be tricky — it’s harder to keep track of which cel uses which palette group.
     -   More cels to export and organize overall.
 
@@ -107,13 +150,13 @@ Don’t mix **single-palette** and **multi-palette** cels within the same frame.
 
 ## Export Format
 
-Once you’ve created your sprite, you’ll need to export your cel images from **Aseprite** or any other image editing tool.
+Once you’ve created your frame images, you’ll need to export your cel images from **Aseprite** or any other image editing tool.
 
 These cel images must be formatted correctly — the tool is strict about this, but once you understand the requirements, it’s straightforward.
 
 ### Filename Requirements
 
-Each cel image must follow this exact naming format so the **Object Generator** can correctly identify frame and layer order during processing.
+Each cel image must follow this exact naming format so the **Sprite Generator** can correctly identify frame and layer order during processing.
 
 ```
 Frame-[number]-Layer-[number].png
@@ -129,7 +172,7 @@ Frame-1-Layer-2.png
 
 ### Image Requirements
 
-All cel images must meet the following requirements to be compatible with the **Object Generator**:
+All cel images must meet the following requirements to be compatible with the **Sprite Generator**:
 
 1. **Image Format**
 
@@ -154,10 +197,31 @@ If you’re using another image editor, you have **two options**:
 
 Make sure to export each cel image using the **filename format** shown above.
 
-## Using the Object Generator
+# Sprite Generator
+
+The **Sprite Generator** lets you create WAN sprites of **Type 0** (objects) and **Type 2** (effects) from frame images.
+
+**Type 1** (Pokémon sprites) is not supported, since SkyTemple already handles Pokémon sprites very well and has a complete workflow for importing from [SpriteCollab](https://sprites.pmdcollab.org/).
+
+## Folder Requirements
+
+The Sprite Generator requires a folder containing your cel images. The folder structure is simple:
+
+```
+your_sprite_folder/
+├── Frame-0-Layer-0.png
+├── Frame-0-Layer-1.png
+├── Frame-1-Layer-0.png
+├── Frame-1-Layer-1.png
+└── Frame-2-Layer-0.png
+```
+
+All cel images must follow the naming format described in [Export Format](#export-format).
+
+## Using the Sprite Generator
 
 <div align="center">
-    <img src="images/object-generator.png" alt="Object Generator" />
+    <img src="images/sprite-generator.png" alt="Sprite Generator" />
 </div>
 
 **How to Use:**
@@ -170,34 +234,34 @@ Make sure to export each cel image using the **filename format** shown above.
 
 2. **Adjust your configuration**
 
-    Set your preferred **min density**, **displace object**, **chunk sizes**, and enable **Intra Frame** or **Inter Frame** scans if needed.
+    Set your preferred **min density**, **displace sprite**, **chunk sizes**, and enable **Intra Frame** or **Inter Frame** scans if needed.
 
-    You can also set up your Animation Settings — define how many animations your object has and how the frames are arranged.
+    You can also set up your Animation Settings — define how many animations your sprite has and how the frames are arranged.
 
-3. **Hit “Generate Object”**
+3. **Hit “Generate Sprite”**
 
-    The tool will automatically build your object and organize everything into the correct structure.
+    The tool will automatically build your sprite and organize everything into the correct structure.
 
     After generation, the console will display a summary with useful stats such as:
 
     ```
-    Object Info:
-    ❔ Maximum Memory Used by Animation: 28
-    ❔ Total Colors Used: 48
-    ❔ Total Unique Chunks: 29
+    Sprite Info:
+    [INFO] Maximum Memory Used by Animation: 18
+    [INFO] Total Colors Used: 32
+    [INFO] Total Unique Chunks: 38
 
-    Frames Info:
-    Frame-1: Total Chunks = 15 and Memory = 27
-    Frame-2: Total Chunks = 13 and Memory = 28
-    Frame-3: Total Chunks = 13 and Memory = 28
+    Frames Info: 
+    [INFO] Frame-1: Total Chunks = 11 and Memory Usage = 16
+    [INFO] Frame-2: Total Chunks = 10 and Memory Usage = 18
+    [INFO] Frame-3: Total Chunks = 10 and Memory Usage = 15
+    [INFO] Frame-4: Total Chunks = 9 and Memory Usage = 13
     ```
 
-    If your object exceeds the game’s limits, the tool will warn you in the console so you can tweak your settings or simplify your sprite.
+    If your sprite exceeds the game’s limits, the tool will warn you in the console so you can tweak your settings or simplify your sprite.
 
-Once complete, you’ll find the output in a new folder named **object** inside your selected directory.
-This folder contains all necessary files — you can **import it directly into SkyTemple** or **convert it back to `.wan`** with **GFXCrunch** for in-game use.
+Once complete, you’ll find the output in a new folder named **sprite** inside your selected directory.
 
-## Object Generator Configurations
+## Sprite Generator Configurations
 
 ### Min Density
 
@@ -205,7 +269,7 @@ Each image can be divided into **chunks**, which are smaller portions of the ima
 
 Chunks are made up of **tiles**, and the game requires chunk dimensions to be powers of 2 (8, 16, 32, 64). The smallest possible chunk is **8×8 pixels**, which equals one tile.
 
-**Min Density** is the minimum percentage of tiles that need to be filled in each row and column for a chunk to be considered valid for object generation.
+**Min Density** is the minimum percentage of tiles that need to be filled in each row and column for a chunk to be considered valid for sprite generation.
 
 <div align="center">
     <img src="images/min_density.png" alt="Min Density Example" />
@@ -217,37 +281,37 @@ If the **min_density** is set to **50%**, then at least **2 tiles** in every row
 
 Since **row 3** has only **1 tile** filled, it’s considered an **invalid chunk**.
 
-### Displace Object
+### Displace Sprite
 
 <div align="center">
     <img src="images/displacement.png" alt="Displacement Example" />
 </div>
 
-Every object exists within its own local coordinate space, centered at **(256, 512)**.
+Every sprite exists within its own local coordinate space, centered at **(256, 512)**.
 
 Anything **above** this center point appears in **front of the actor**, while anything **below** it appears **behind the actor**.
 
-By default, the object is positioned so that its own center lines up with this coordinate-space center.
+By default, the sprite is positioned so that its own center lines up with this coordinate-space center.
 
-You can shift the object’s position relative to that point by adjusting the **X** and **Y** values under **Displace Object**.
+You can shift the sprite’s position relative to that point by adjusting the **X** and **Y** values under **Displace Sprite**.
 
 -   **X** increases to the right and decreases to the left.
 -   **Y** increases downward and decreases upward.
 
-For example, if you set **Displace Object** to:
+For example, if you set **Displace Sprite** to:
 
--   **X = +object_width / 2**
--   **Y = +object_height / 2**
+-   **X = +sprite_width / 2**
+-   **Y = +sprite_height / 2**
 
-…the object’s **top-left corner** will align with the coordinate-space center, making it appear fully **below** the actor.
+…the sprite’s **top-left corner** will align with the coordinate-space center, making it appear fully **below** the actor.
 
 **Quick Select Buttons:**
 
--   **TopL:** Aligns the coordinate-space center with the object’s **top-left corner**.
--   **TopR:** Aligns the coordinate-space center with the object’s **top-right corner**.
--   **Center:** Aligns the coordinate-space center with the object’s **center**.
--   **BottomL:** Aligns the coordinate-space center with the object’s **bottom-left corner**.
--   **BottomR:** Aligns the coordinate-space center with the object’s **bottom-right corner**.
+-   **TopL:** Aligns the coordinate-space center with the sprite’s **top-left corner**.
+-   **TopR:** Aligns the coordinate-space center with the sprite’s **top-right corner**.
+-   **Center:** Aligns the coordinate-space center with the sprite’s **center**.
+-   **BottomL:** Aligns the coordinate-space center with the sprite’s **bottom-left corner**.
+-   **BottomR:** Aligns the coordinate-space center with the sprite’s **bottom-right corner**.
 
 ### Scan Options
 
@@ -259,7 +323,7 @@ Intra Frame Scan searches for repeated chunks within the same frame.
 
 If a frame contains repeated chunks, the tool can detect them and reduce memory usage by referencing the same chunk in memory instead of storing duplicates.
 
-This optimization saves memory, allowing more objects to be displayed together in a scene without running into memory limits.
+This optimization saves memory, allowing more sprites to be displayed together in a scene without running into memory limits.
 
 **Inter Frame Scan:**
 
@@ -271,7 +335,7 @@ The shared parts reuse the same chunk data, reducing the overall number of total
 
 **Chunk Sizes:**
 
-Chunk Sizes define which dimensions the Object Generator checks when detecting repeated chunks in both **Intra** and **Inter Frame Scans**.
+Chunk Sizes define which dimensions the Sprite Generator checks when detecting repeated chunks in both **Intra** and **Inter Frame Scans**.
 
 The generator checks each enabled size from largest to smallest, prioritizing larger chunks first since they are more memory efficient.
 
@@ -292,9 +356,9 @@ Only enable these sizes if you want to **aggressively search for similar chunks*
 
 An **animation** is made up of a series of frames, each shown for a set amount of time measured in **ticks** (**60 ticks = 1 second**).
 
-Each object can have up to **8 different animations**. If you need more than 8 animations, you’ll have to create a **second object** using the same files.
+Each sprite can have up to **8 different animations**. If you need more than 8 animations, you’ll have to create a **second sprite** using the same files.
 
-To create a **static object**, set up **one animation containing a single frame**.
+To create a **static sprite**, set up **one animation containing a single frame**.
 The duration value doesn’t matter — the frame remains visible indefinitely.
 
 **Example structure:**
@@ -315,7 +379,7 @@ Click **View Animations** to preview how it looks in-game — test the timing an
 
 ## How to Use with `SetAnimation()`
 
-`SetAnimation` is an **ExplorerScript** function used to change the current animation of an object.
+`SetAnimation` is an **ExplorerScript** function used to change the current animation of a sprite.
 
 ```
 SetAnimation<entity ENTITY>(x)
@@ -336,7 +400,7 @@ Depending on the behavior you want, the argument differs as follows:
 
 # Frames Generator
 
-The **Frames Generator** performs the reverse process — it takes an existing game object (with all its XML files and chunks) and reconstructs the frame images. This is useful for extracting sprites from the game or modifying existing objects.
+The **Frames Generator** performs the reverse process — it takes an existing game sprite (with all its XML files and chunks) and reconstructs the frame images. This is useful for extracting sprites from the game or modifying existing sprites.
 
 ## Folder Requirements
 
@@ -354,23 +418,23 @@ your_folder/
 └── animations.xml
 ```
 
-### Tile Mode Objects
+### Tile Mode Sprites
 
-The following objects require **special handling**.
-If you want to generate frames for any of them, your folder must be named exactly the same as the **object name**, otherwise the Frames Generator cannot process them correctly:
+The following sprites require **special handling**.
+If you want to generate frames for any of them, your folder must be named exactly the same as the **sprite name**, otherwise the Frames Generator cannot process them correctly:
 
 ```
 s01p01a1, s01p01a2, s08p01a1, s13p03a1, s13p03a2, s20p01a1, s20p01a2,
 v01p05b1, v01p05b2, v01p05b3, v04p03a1, v19p06a1, v37p02a1
 ```
 
-These are the only objects that need this special treatment. For all other objects, folder names can be anything.
+These are the only sprites that need this special treatment. For all other sprites, folder names can be anything.
 
 **Where to get these files:**
 
 These files are typically:
 
--   Generated by the Object Generator
+-   Generated by the Sprite Generator
 -   Extracted from the game using tools like GFXCrunch and SkyTemple
 
 ## Using the Frames Generator
@@ -383,7 +447,7 @@ These files are typically:
 
 1. **Select your folder**
 
-    Choose the folder containing your **object data** (as described above).
+    Choose the folder containing your **sprite data** (as described above).
 
     The tool will validate the folder structure and let you know if anything’s missing or formatted incorrectly before continuing.
 
@@ -398,7 +462,7 @@ These files are typically:
     The tool will rebuild each frame by assembling the chunks in order and applying the correct palettes.
 
     After generation, the console will display the total number of frames processed.
-    A **`config.json`** file is also created — you can load this into the **Object Generator** later to rebuild the object using the same settings.
+    A **`config.json`** file is also created — you can load this into the **Sprite Generator** later to rebuild the sprite using the same settings.
 
 Once the process finishes, your **frame images** will appear in a new folder named **frames** inside your selected directory.
 You can open these images in any image editor to modify them freely.
@@ -440,17 +504,17 @@ The unrestricted mode. No overlap detection is performed.
 
 # Bulk Conversion
 
-If you're running **Object Studio** from source, you can perform **bulk conversions** using the built-in helper functions from the `generators` modules.
+If you're running **Wanimation Studio** from source, you can perform **bulk conversions** using the built-in helper functions from the `generators` modules.
 
-### Object Generator
+### Sprite Generator
 
 ```python
-from generators import og_process_multiple_folder
+from generators import sg_process_multiple_folder
 
-og_process_multiple_folder(
+sg_process_multiple_folder(
     parent_folder,
     min_row_column_density=0.5,
-    displace_object=[0, 0],
+    displace_sprite=[0, 0],
     intra_scan=True,
     inter_scan=True,
     scan_chunk_sizes=None,
@@ -461,7 +525,7 @@ og_process_multiple_folder(
 
 -   `parent_folder` **(required)**: Path to directory containing subfolders with frame images
 -   `min_row_column_density` (optional, default: `0.5`): Float between 0.0 and 1.0
--   `displace_object` (optional, default: `[0, 0]`): List of two integers `[x, y]`
+-   `displace_sprite` (optional, default: `[0, 0]`): List of two integers `[x, y]`
 -   `intra_scan` (optional, default: `True`): Boolean
 -   `inter_scan` (optional, default: `True`): Boolean
 -   `scan_chunk_sizes` (optional, default: `None`): List like `[(32, 32), (16, 16)]`
@@ -481,5 +545,5 @@ fg_process_multiple_folder(
 
 **Arguments:**
 
--   `parent_folder` **(required)**: Path to directory containing subfolders with object data
+-   `parent_folder` **(required)**: Path to directory containing subfolders with sprite data
 -   `avoid_overlap` (optional, default: `"none"`): One of `"pixel"`, `"chunk"`, `"palette"`, or `"none"`

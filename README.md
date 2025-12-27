@@ -1,9 +1,9 @@
-# 🧩 Object Studio
+# 🧩 Wanimation Studio
 
-**Object Studio** is a set of two tools — **Object Generator** and **Frames Generator** — made for **Pokémon Mystery Dungeon: Explorers of Sky object modding**.
+**Wanimation Studio** is a set of two tools — **Sprite Generator** and **Frames Generator** — made for **Pokémon Mystery Dungeon: Explorers of Sky sprite modding**.
 
--   The **Object Generator** converts **frames into objects** that can be imported into **SkyTemple** or converted back into **.wan** format using **GFXCrunch** for in-game use.
--   The **Frames Generator** recreates **frames from existing object**, allowing them to be viewed and edited in external tools such as **Aseprite**.
+-   The **Sprite Generator** converts **frames into sprites** that can be imported into **SkyTemple** or converted back into **.wan** format using **GFXCrunch** for in-game use.
+-   The **Frames Generator** recreates **frames from existing sprites**, allowing them to be viewed and edited in external tools such as **Aseprite**.
 
 ## Why Use This?
 
@@ -13,20 +13,20 @@
 -   Objects are limited to **16 colors**, even though the game actually supports **up to 192 colors** (12 palette groups).
 -   It doesn’t **reuse chunks** — it stores duplicate chunks instead of referencing repeating ones, which wastes memory.
 
-The **Object Generator** removes all of these limits, letting you create **animated, multi-layered, multi-palette objects** that are memory-efficient and fully compatible with the game.
+The **Sprite Generator** removes all of these limits, letting you create **animated, multi-layered, multi-palette sprites** that are memory-efficient and fully compatible with the game.
 
 ## 🚀 Installation
 
-You can download pre-built **executables** from the [Releases Page](https://github.com/WraithFire/object-studio/releases/latest).
+You can download pre-built **executables** from the [Releases Page](https://github.com/WraithFire/wanimation-studio/releases/latest).
 These are ready-to-run builds for Windows and macOS.
 
 If you prefer, you can also [run from source code](#linuxrun-from-source-code) — especially handy if your antivirus really hates unknown executables.
 
 ## Windows
 
-1. Download **`object_studio_windows.zip`**
+1. Download **`wanimation_studio_windows.zip`**
 2. Extract the ZIP file and open the extracted folder
-3. Double-click **`object_studio.exe`** to run.
+3. Double-click **`wanimation_studio.exe`** to run.
 
 > ⚠️ If Windows Defender warns you about an unrecognized app:
 >
@@ -37,18 +37,18 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
 
 **For Intel Macs:**
 
-1. Download **`object_studio_mac_intel.dmg`**
-2. Open the DMG file and drag **Object Studio** into **Applications**
+1. Download **`wanimation_studio_mac_intel.dmg`**
+2. Open the DMG file and drag **Wanimation Studio** into **Applications**
 
 **For Apple Silicon (M1/M2/M3):**
 
-1. Download **`object_studio_mac_arm64.dmg`**
-2. Open the DMG file and drag **Object Studio** into **Applications**
+1. Download **`wanimation_studio_mac_arm64.dmg`**
+2. Open the DMG file and drag **Wanimation Studio** into **Applications**
 
 > ⚠️ If macOS blocks the app:
 >
 > -   Open **System Preferences → Security & Privacy**
-> -   Click **“Open Anyway”** for _Object Studio_
+> -   Click **“Open Anyway”** for _Wanimation Studio_
 
 ## Linux/Run from source code
 
@@ -66,19 +66,19 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
     - **Option 1: Clone the repository (recommended)**
 
         ```bash
-        git clone https://github.com/WraithFire/object-studio
+        git clone https://github.com/WraithFire/wanimation-studio
         ```
 
     - **Option 2: Download the ZIP file**
 
-        - Direct link: [Download ZIP](https://github.com/WraithFire/object-studio/archive/refs/heads/master.zip)
+        - Direct link: [Download ZIP](https://github.com/WraithFire/wanimation-studio/archive/refs/heads/master.zip)
         - After downloading, extract the ZIP file to your desired location.
         - Once extracted, **open terminal** in the extracted folder, **skip Step 2**, and continue from **Step 3** below.
 
 2. **Navigate into the project directory:**
 
     ```bash
-    cd object-studio
+    cd wanimation-studio
     ```
 
 3. **Install dependencies:**
@@ -90,7 +90,7 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
 4. **Run the application:**
 
     ```bash
-    python object_studio.py
+    python wanimation_studio.py
     ```
 
 ## 🤝 Contributing

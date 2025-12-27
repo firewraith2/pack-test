@@ -24,3 +24,7 @@ jobs:
       - name: Run Generators Test
         run: |
           python tests/test_generators.py
+        
+      - name: Run Wan Test
+        run: |
+          python tests/test_wan_files.py
