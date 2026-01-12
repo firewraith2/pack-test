@@ -1,6 +1,6 @@
 DEBUG = False
 
-CURRENT_VERSION = "1.0.0"
+CURRENT_VERSION = "0.9.9"
 
 DOCUMENTATION_URL = (
     "https://github.com/WraithFire/wanimation-studio/blob/master/docs/README.md"

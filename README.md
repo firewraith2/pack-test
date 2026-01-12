@@ -1,32 +1,32 @@
-# 🧩 Wanimation Studio
+# 📦 Pack Explorer
 
-**Wanimation Studio** is a set of two tools — **Sprite Generator** and **Frames Generator** — made for **Pokémon Mystery Dungeon: Explorers of Sky sprite modding**.
+**Pack Explorer** is a GUI tool for browsing and modifying pack files in _Pokémon Mystery Dungeon: Explorers of Sky_.
 
--   The **Sprite Generator** converts **frames into sprites** that can be imported into **SkyTemple** or converted back into **.wan** format using **GFXCrunch** for in-game use.
--   The **Frames Generator** recreates **frames from existing sprites**, allowing them to be viewed and edited in external tools such as **Aseprite**.
+Pack files (.bin) are containers used by the game to bundle multiple assets together—such as sprites, effects, dungeon data, and more. This tool lets you open these containers, view their contents, and easily import or export entries.
 
-## Why Use This?
+Known pack files:
 
-**SkyTemple** is an amazing tool, but when it comes to objects, it has a few big limits:
+-   EFFECT/effect.bin
+-   DUNGEON/dungeon.bin
+-   MONSTER/monster.bin
+-   MONSTER/m_attack.bin
+-   MONSTER/m_ground.bin
+-   BALANCE/m_level.bin
 
--   You can only import **one-frame, one-layer** objects — meaning **no animations**.
--   Objects are limited to **16 colors**, even though the game actually supports **up to 192 colors** (12 palette groups).
--   It doesn’t **reuse chunks** — it stores duplicate chunks instead of referencing repeating ones, which wastes memory.
-
-The **Sprite Generator** removes all of these limits, letting you create **animated, multi-layered, multi-palette sprites** that are memory-efficient and fully compatible with the game.
+**Note:** The game may contain additional pack files not listed here.
 
 ## 🚀 Installation
 
-You can download pre-built **executables** from the [Releases Page](https://github.com/WraithFire/wanimation-studio/releases/latest).
+You can download pre-built **executables** from the [Releases Page](https://github.com/WraithFire/pack-explorer/releases/latest).
 These are ready-to-run builds for Windows and macOS.
 
 If you prefer, you can also [run from source code](#linuxrun-from-source-code) — especially handy if your antivirus really hates unknown executables.
 
 ## Windows
 
-1. Download **`wanimation_studio_windows.zip`**
+1. Download **`pack_explorer_windows.zip`**
 2. Extract the ZIP file and open the extracted folder
-3. Double-click **`wanimation_studio.exe`** to run.
+3. Double-click **`pack_explorer.exe`** to run.
 
 > ⚠️ If Windows Defender warns you about an unrecognized app:
 >
@@ -37,24 +37,24 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
 
 **For Intel Macs:**
 
-1. Download **`wanimation_studio_mac_intel.dmg`**
-2. Open the DMG file and drag **Wanimation Studio** into **Applications**
+1. Download **`pack_explorer_mac_intel.dmg`**
+2. Open the DMG file and drag **Pack Explorer** into **Applications**
 
 **For Apple Silicon (M1/M2/M3):**
 
-1. Download **`wanimation_studio_mac_arm64.dmg`**
-2. Open the DMG file and drag **Wanimation Studio** into **Applications**
+1. Download **`pack_explorer_mac_arm64.dmg`**
+2. Open the DMG file and drag **Pack Explorer** into **Applications**
 
 > ⚠️ If macOS blocks the app:
 >
 > -   Open **System Preferences → Security & Privacy**
-> -   Click **“Open Anyway”** for _Wanimation Studio_
+> -   Click **"Open Anyway"** for _Pack Explorer_
 
 ## Linux/Run from source code
 
 **Requirements:**
 
--   Python 3.8 or higher
+-   Python 3.9 or higher
 -   pip (Python package manager)
 -   tkinter (Python Tk GUI toolkit)
 
@@ -66,19 +66,19 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
     - **Option 1: Clone the repository (recommended)**
 
         ```bash
-        git clone https://github.com/WraithFire/wanimation-studio
+        git clone https://github.com/WraithFire/pack-explorer
         ```
 
     - **Option 2: Download the ZIP file**
 
-        - Direct link: [Download ZIP](https://github.com/WraithFire/wanimation-studio/archive/refs/heads/master.zip)
+        - Direct link: [Download ZIP](https://github.com/WraithFire/pack-explorer/archive/refs/heads/master.zip)
         - After downloading, extract the ZIP file to your desired location.
         - Once extracted, **open terminal** in the extracted folder, **skip Step 2**, and continue from **Step 3** below.
 
 2. **Navigate into the project directory:**
 
     ```bash
-    cd wanimation-studio
+    cd pack-explorer
     ```
 
 3. **Install dependencies:**
@@ -90,8 +90,20 @@ If you prefer, you can also [run from source code](#linuxrun-from-source-code) �
 4. **Run the application:**
 
     ```bash
-    python wanimation_studio.py
+    python pack_explorer.py
     ```
+
+## 🙏 Acknowledgement
+
+This project uses code derived from [skytemple-files](https://github.com/SkyTemple/skytemple-files):
+
+-   **`bin_pack/model.py`** - Pack parsing/serialization logic based on `skytemple_files.container.bin_pack`
+-   **`bin_pack/file_types.py`** - File type detection logic derived from skytemple-files file format handlers (BGP, DPL, SCREEN, AT4PX, etc.)
+
+Special thanks to:
+
+-   **psy_commando** - for research and documentation on pack files and various file formats.
+-   **SkyTemple Contributors** - for their research and implementing parsers for various file formats.
 
 ## 🤝 Contributing
 
@@ -101,21 +113,7 @@ If you have ideas, improvements, or bug fixes:
 -   Open an **issue**
 -   Or submit a **pull request**
 
-## 🏆 Credits
-
-Special thanks to the following community members:
-
--   **psy_commando** - for extensive documentation and the [GFX Crunch](https://github.com/PsyCommando/ppmdu_2) tool
--   **palika** - for the incredibly useful [Animated Object Guide](https://docs.google.com/document/d/1ckoH65jPlHYZAVn0PMxO3zsuhlzpR3pQ3fOjljqyqD0)
-
 ## 📜 License
 
 This project is licensed under the **GNU General Public License v3.0**.
 See the [LICENSE](LICENSE) file for full terms.
-
-## 💬 Support
-
-Need help?
-
-1. Start by reading the [documentation](docs/README.md) — it explains how to use the tool and what each configuration means.
-2. If the documentation doesn’t answer your question, feel free to message me on Discord: **@wraith_fire**
