@@ -36,7 +36,7 @@ class WANSubHeader:
         self.ptr_animinfo = 0
         self.ptr_imginfo = 0
         self.sprite_type = 0
-        self.unk12 = 0
+        self.const0_unk12 = 0
 
     @classmethod
     def read_from_bytes(cls, data: bytes, offset: int) -> "WANSubHeader":
@@ -45,7 +45,7 @@ class WANSubHeader:
         header.ptr_animinfo = read_uint32(data, offset)
         header.ptr_imginfo = read_uint32(data, offset + 4)
         header.sprite_type = read_uint16(data, offset + 8)
-        header.unk12 = read_uint16(data, offset + 10)
+        header.const0_unk12 = read_uint16(data, offset + 10)
         return header
 
 
@@ -58,10 +58,10 @@ class WANAnimInfo:
         self.ptr_anim_grp_table = 0
         self.nb_anim_groups = 0
         self.max_memory_used = 0
-        self.unk7 = 0
-        self.unk8 = 0
-        self.unk9 = 0
-        self.unk10 = 0
+        self.const0_unk7 = 0
+        self.const0_unk8 = 0
+        self.bool_unk9 = 0
+        self.const0_unk10 = 0
 
     @classmethod
     def read_from_bytes(cls, data: bytes, offset: int) -> "WANAnimInfo":
@@ -72,10 +72,10 @@ class WANAnimInfo:
         info.ptr_anim_grp_table = read_uint32(data, offset + 8)
         info.nb_anim_groups = read_uint16(data, offset + 12)
         info.max_memory_used = read_uint16(data, offset + 14)
-        info.unk7 = read_uint16(data, offset + 16)
-        info.unk8 = read_uint16(data, offset + 18)
-        info.unk9 = read_uint16(data, offset + 20)
-        info.unk10 = read_uint16(data, offset + 22)
+        info.const0_unk7 = read_uint16(data, offset + 16)
+        info.const0_unk8 = read_uint16(data, offset + 18)
+        info.bool_unk9 = read_uint16(data, offset + 20)
+        info.const0_unk10 = read_uint16(data, offset + 22)
         return info
 
 
@@ -108,7 +108,7 @@ class WANPalInfo:
 
     def __init__(self):
         self.ptr_pal = 0
-        self.unk3 = 0
+        self.bool_unk3 = 0
         self.max_colors_used = 0
         self.unk4 = 0
         self.unk5 = 0
@@ -119,7 +119,7 @@ class WANPalInfo:
         """Read palette info from bytes."""
         info = cls()
         info.ptr_pal = read_uint32(data, offset)
-        info.unk3 = read_uint16(data, offset + 4)
+        info.bool_unk3 = read_uint16(data, offset + 4)
         info.max_colors_used = read_uint16(data, offset + 6)
         info.unk4 = read_uint16(data, offset + 8)
         info.unk5 = read_uint16(data, offset + 10)
@@ -224,20 +224,20 @@ class WANParser:
 
         if self.wan_header:
             sprite.spr_info.sprite_type = self.wan_header.sprite_type
-            sprite.spr_info.unk12 = self.wan_header.unk12
+            sprite.spr_info.const0_unk12 = self.wan_header.const0_unk12
 
         if self.wan_pal_info:
             sprite.spr_info.max_colors_used = self.wan_pal_info.max_colors_used
-            sprite.spr_info.unk3 = self.wan_pal_info.unk3
+            sprite.spr_info.bool_unk3 = self.wan_pal_info.bool_unk3
             sprite.spr_info.unk4 = self.wan_pal_info.unk4
             sprite.spr_info.unk5 = self.wan_pal_info.unk5
 
         if self.wan_anim_info:
             sprite.spr_info.max_memory_used = self.wan_anim_info.max_memory_used
-            sprite.spr_info.unk7 = self.wan_anim_info.unk7
-            sprite.spr_info.unk8 = self.wan_anim_info.unk8
-            sprite.spr_info.unk9 = self.wan_anim_info.unk9
-            sprite.spr_info.unk10 = self.wan_anim_info.unk10
+            sprite.spr_info.const0_unk7 = self.wan_anim_info.const0_unk7
+            sprite.spr_info.const0_unk8 = self.wan_anim_info.const0_unk8
+            sprite.spr_info.bool_unk9 = self.wan_anim_info.bool_unk9
+            sprite.spr_info.const0_unk10 = self.wan_anim_info.const0_unk10
 
         sprite.metaframes, sprite.metaframe_groups = self._read_meta_frame_groups()
         sprite.anim_groups = self._read_anim_groups()
@@ -336,12 +336,12 @@ class WANParser:
         mf.h_flip = (offx_fl >> 12) & 1
         is_last = bool(offx_fl & (1 << 11))  # Bit 11 indicates last frame in group
         mf.is_absolute_palette = (offx_fl >> 10) & 1
-        mf.x_off_bit7 = (offx_fl >> 9) & 1
+        mf.const0_x_off_bit7 = (offx_fl >> 9) & 1
 
-        mf.y_off_bit3 = (offy_fl >> 13) & 1
+        mf.bool_y_off_bit3 = (offy_fl >> 13) & 1
         mf.mosaic = (offy_fl >> 12) & 1
-        mf.y_off_bit5 = (offy_fl >> 11) & 1
-        mf.y_off_bit6 = (offy_fl >> 10) & 1
+        mf.const0_y_off_bit5 = (offy_fl >> 11) & 1
+        mf.const0_y_off_bit6 = (offy_fl >> 10) & 1
 
         return mf, is_last
 

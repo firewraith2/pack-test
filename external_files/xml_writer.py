@@ -32,7 +32,7 @@ def write_spriteinfo_xml(sprite: BaseSprite, output_path: Path) -> None:
 
     info = sprite.spr_info
 
-    ET.SubElement(root, XmlProp.UNK3).text = int_value_to_string(info.unk3)
+    ET.SubElement(root, XmlProp.BOOL_UNK3).text = int_value_to_string(info.bool_unk3)
     ET.SubElement(root, XmlProp.MAXCOLUSED).text = int_value_to_string(
         info.max_colors_used
     )
@@ -41,10 +41,16 @@ def write_spriteinfo_xml(sprite: BaseSprite, output_path: Path) -> None:
     ET.SubElement(root, XmlProp.MAXMEMUSED).text = int_value_to_string(
         info.max_memory_used
     )
-    ET.SubElement(root, XmlProp.UNK7).text = int_value_to_string(info.unk7)
-    ET.SubElement(root, XmlProp.UNK8).text = int_value_to_string(info.unk8)
-    ET.SubElement(root, XmlProp.UNK9).text = int_value_to_string(info.unk9)
-    ET.SubElement(root, XmlProp.UNK10).text = int_value_to_string(info.unk10)
+    ET.SubElement(root, XmlProp.CONST0_UNK7).text = int_value_to_string(
+        info.const0_unk7
+    )
+    ET.SubElement(root, XmlProp.CONST0_UNK8).text = int_value_to_string(
+        info.const0_unk8
+    )
+    ET.SubElement(root, XmlProp.BOOL_UNK9).text = int_value_to_string(info.bool_unk9)
+    ET.SubElement(root, XmlProp.CONST0_UNK10).text = int_value_to_string(
+        info.const0_unk10
+    )
     ET.SubElement(root, XmlProp.SPRTY).text = int_value_to_string(info.sprite_type)
     ET.SubElement(root, XmlProp.IS8BPPSPRITE).text = int_value_to_string(
         info.is_8bpp_sprite
@@ -53,7 +59,9 @@ def write_spriteinfo_xml(sprite: BaseSprite, output_path: Path) -> None:
     ET.SubElement(root, XmlProp.PALSLOTSUSED).text = int_value_to_string(
         info.palette_slots_used
     )
-    ET.SubElement(root, XmlProp.UNK12).text = int_value_to_string(info.unk12)
+    ET.SubElement(root, XmlProp.CONST0_UNK12).text = int_value_to_string(
+        info.const0_unk12
+    )
 
     write_xml_file(root, output_path)
 
@@ -112,17 +120,17 @@ def write_frames_xml(sprite: BaseSprite, output_path: Path) -> None:
                 ET.SubElement(frame_elem, XmlProp.ISABSOLUTEPALETTE).text = (
                     int_value_to_string(mf.is_absolute_palette)
                 )
-                ET.SubElement(frame_elem, XmlProp.XOFFBIT7).text = int_value_to_string(
-                    mf.x_off_bit7
+                ET.SubElement(frame_elem, XmlProp.CONST0_XOFFBIT7).text = (
+                    int_value_to_string(mf.const0_x_off_bit7)
                 )
-                ET.SubElement(frame_elem, XmlProp.YOFFBIT3).text = int_value_to_string(
-                    mf.y_off_bit3
+                ET.SubElement(frame_elem, XmlProp.BOOL_YOFFBIT3).text = (
+                    int_value_to_string(mf.bool_y_off_bit3)
                 )
-                ET.SubElement(frame_elem, XmlProp.YOFFBIT5).text = int_value_to_string(
-                    mf.y_off_bit5
+                ET.SubElement(frame_elem, XmlProp.CONST0_YOFFBIT5).text = (
+                    int_value_to_string(mf.const0_y_off_bit5)
                 )
-                ET.SubElement(frame_elem, XmlProp.YOFFBIT6).text = int_value_to_string(
-                    mf.y_off_bit6
+                ET.SubElement(frame_elem, XmlProp.CONST0_YOFFBIT6).text = (
+                    int_value_to_string(mf.const0_y_off_bit6)
                 )
 
     write_xml_file(root, output_path)

@@ -6,7 +6,7 @@ import numpy as np
 from pathlib import Path
 from typing import List, Optional, Tuple
 from .sprite import BaseSprite, AnimFrame
-from .constants import Sir0, WanFormat
+from .constants import Sir0, PADDING_BYTE
 from .sir0 import wrap_sir0
 from data import (
     write_uint32,
@@ -70,10 +70,10 @@ def _write_meta_frame_to_wan(mf, set_last_bit: bool = False) -> bytes:
     # YOffset bit layout: [15:14]=res[1:0], [13]=YOffbit3, [12]=Mosaic, [11]=YOffbit5, [10]=YOffbit6, [9:0]=offsetY
     y_offset = (
         ((resval << 8) & 0xC000)
-        | (mf.y_off_bit3 << 13)
+        | (mf.bool_y_off_bit3 << 13)
         | (mf.mosaic << 12)
-        | (mf.y_off_bit5 << 11)
-        | (mf.y_off_bit6 << 10)
+        | (mf.const0_y_off_bit5 << 11)
+        | (mf.const0_y_off_bit6 << 10)
         | (mf.offset_y & 0x03FF)
     )
     result.extend(write_uint16(y_offset))
@@ -85,13 +85,12 @@ def _write_meta_frame_to_wan(mf, set_last_bit: bool = False) -> bytes:
         | (mf.h_flip << 12)
         | (endbit_val << 11)
         | (mf.is_absolute_palette << 10)
-        | (mf.x_off_bit7 << 9)
+        | (mf.const0_x_off_bit7 << 9)
         | (mf.offset_x & 0x01FF)
     )
     result.extend(write_uint16(x_offset))
-
-    result.extend(write_uint8(mf.memory_offset & 0xFF))
-    result.extend(write_uint8(mf.palette_offset & 0xFF))
+    result.extend(write_uint8(mf.memory_offset))
+    result.extend(write_uint8(mf.palette_offset))
 
     return bytes(result)
 
@@ -180,7 +179,7 @@ class WANWriter:
         return has_animation and not has_images
 
     def _write_wan_content(self) -> None:
-        """Write WAN file content following GfxCrunch order: data blocks first, then info headers."""
+        """Write WAN file content following order: data blocks first, then info headers."""
 
         is_image_base = self._is_image_base()
         is_animation_base = self._is_animation_base()
@@ -226,7 +225,7 @@ class WANWriter:
         self._write_pointer(anim_info_offset)
         self._write_pointer(img_info_offset)
         self.output_buffer.extend(write_uint16(self.sprite.spr_info.sprite_type))
-        self.output_buffer.extend(write_uint16(self.sprite.spr_info.unk12))
+        self.output_buffer.extend(write_uint16(self.sprite.spr_info.const0_unk12))
 
     def _write_anim_info(self) -> None:
         """Write animation info structure."""
@@ -250,10 +249,10 @@ class WANWriter:
         nb_anim_groups = len(self.sprite.anim_groups) if self.sprite.anim_groups else 0
         self.output_buffer.extend(write_uint16(nb_anim_groups))
         self.output_buffer.extend(write_uint16(self.sprite.spr_info.max_memory_used))
-        self.output_buffer.extend(write_uint16(self.sprite.spr_info.unk7))
-        self.output_buffer.extend(write_uint16(self.sprite.spr_info.unk8))
-        self.output_buffer.extend(write_uint16(self.sprite.spr_info.unk9))
-        self.output_buffer.extend(write_uint16(self.sprite.spr_info.unk10))
+        self.output_buffer.extend(write_uint16(self.sprite.spr_info.const0_unk7))
+        self.output_buffer.extend(write_uint16(self.sprite.spr_info.const0_unk8))
+        self.output_buffer.extend(write_uint16(self.sprite.spr_info.bool_unk9))
+        self.output_buffer.extend(write_uint16(self.sprite.spr_info.const0_unk10))
 
     def _write_img_data_info(self) -> None:
         """Write image data info structure."""
@@ -306,12 +305,12 @@ class WANWriter:
         self.pal_pos = len(self.output_buffer)
 
         self._write_pointer(palette_colors_pos)
-        unk3 = self.sprite.spr_info.unk3
+        bool_unk3 = self.sprite.spr_info.bool_unk3
         max_colors_used = self.sprite.spr_info.max_colors_used
         unk4 = self.sprite.spr_info.unk4
         unk5 = self.sprite.spr_info.unk5
 
-        self.output_buffer.extend(write_uint16(unk3))
+        self.output_buffer.extend(write_uint16(bool_unk3))
         self.output_buffer.extend(write_uint16(max_colors_used))
         self.output_buffer.extend(write_uint16(unk4))
         self.output_buffer.extend(write_uint16(unk5))
@@ -460,7 +459,7 @@ class WANWriter:
         aligned_len = align_offset(bufflen, alignment)
         len_padding = aligned_len - bufflen
         if len_padding > 0:
-            self.output_buffer.extend(pad_bytes(len_padding, WanFormat.PADDING_BYTE))
+            self.output_buffer.extend(pad_bytes(len_padding, PADDING_BYTE))
 
     def _convert_tiled_image_to_bytes(self, frame, is_4bpp: bool) -> bytes:
         """

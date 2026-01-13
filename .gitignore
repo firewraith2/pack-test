@@ -3,10 +3,12 @@ dist/
 build/
 dev_files/
 *.spec
+*.nds
 examples/
 /tests/**/*_extracted/
 /tests/**/*_frames/
 /tests/**/*_sprite/
 /tests/**/*_sprite.wan
+/tests/**/*_base/
 /tests/**/*_base.wan
 DEBUG/

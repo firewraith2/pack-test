@@ -46,12 +46,26 @@ def validate_integer_input(new_value):
 MS_PER_TICK = 1000 / 60
 
 # Category to visible checkboxes mapping
-CATEGORY_CHECKBOX_MAP = {
-    "4bpp Standalone": ["tiles_mode", "base_palette"],
-    "8bpp Standalone": ["tiles_mode", "base_palette"],
-    "4bpp Base": ["tiles_mode"],
-    "8bpp Base": ["tiles_mode"],
-}
+from generators.constants import SPRITE_CATEGORY_CONFIGS
+
+
+def _build_category_checkbox_map():
+    """Build checkbox map from SPRITE_CATEGORY_CONFIGS.
+
+    If a config value is None, the corresponding checkbox is shown.
+    """
+    checkbox_map = {}
+    checkbox_keys = ["tiles_mode", "used_base_palette"]
+    for category_key, config in SPRITE_CATEGORY_CONFIGS.items():
+        # Convert snake_case to display name (e.g., "4bpp_standalone" -> "4bpp Standalone")
+        parts = category_key.split("_")
+        display_name = parts[0] + " " + parts[1].title() if len(parts) > 1 else parts[0]
+        checkboxes = [key for key in checkbox_keys if config.get(key) is None]
+        checkbox_map[display_name] = checkboxes
+    return checkbox_map
+
+
+CATEGORY_CHECKBOX_MAP = _build_category_checkbox_map()
 
 
 class AnimationPlayer:
@@ -1445,12 +1459,12 @@ class WanimationStudioGUI:
         )
         self.category_checkboxes["tiles_mode"].pack(side=tk.LEFT)
 
-        self.category_checkboxes["base_palette"] = ttk.Checkbutton(
+        self.category_checkboxes["used_base_palette"] = ttk.Checkbutton(
             self.category_props_frame,
             text="Base Palette",
             variable=self.used_base_palette,
         )
-        self.category_checkboxes["base_palette"].pack(side=tk.LEFT, padx=(10, 0))
+        self.category_checkboxes["used_base_palette"].pack(side=tk.LEFT, padx=(10, 0))
 
         row += 1
 

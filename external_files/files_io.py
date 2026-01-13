@@ -54,3 +54,5 @@ def write_external_files(sprite: BaseSprite, output_dir: Path) -> None:
     imgs_dir = output_dir / ExternalFiles.IMGS_DIR
 
     export_frame_images(sprite, imgs_dir)
+
+    print(f"[OK] External files exported to: {output_dir.name}")

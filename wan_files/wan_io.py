@@ -68,4 +68,6 @@ def generate_wan(
         output_dir.parent.mkdir(parents=True, exist_ok=True)
         write_bytes_to_file(output_dir, wan_bytes)
 
+        print(f"[OK] WAN file exported to: {output_dir.name}")
+
     return wan_bytes

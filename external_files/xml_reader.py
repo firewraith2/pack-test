@@ -56,7 +56,7 @@ def read_spriteinfo_xml(sprite: BaseSprite, xml_path: Path) -> None:
     info = sprite.spr_info
 
     prop_map = {
-        XmlProp.UNK3: lambda v: setattr(info, "unk3", string_value_to_int(v)),
+        XmlProp.BOOL_UNK3: lambda v: setattr(info, "bool_unk3", string_value_to_int(v)),
         XmlProp.MAXCOLUSED: lambda v: setattr(
             info, "max_colors_used", string_value_to_int(v)
         ),
@@ -65,10 +65,16 @@ def read_spriteinfo_xml(sprite: BaseSprite, xml_path: Path) -> None:
         XmlProp.MAXMEMUSED: lambda v: setattr(
             info, "max_memory_used", string_value_to_int(v)
         ),
-        XmlProp.UNK7: lambda v: setattr(info, "unk7", string_value_to_int(v)),
-        XmlProp.UNK8: lambda v: setattr(info, "unk8", string_value_to_int(v)),
-        XmlProp.UNK9: lambda v: setattr(info, "unk9", string_value_to_int(v)),
-        XmlProp.UNK10: lambda v: setattr(info, "unk10", string_value_to_int(v)),
+        XmlProp.CONST0_UNK7: lambda v: setattr(
+            info, "const0_unk7", string_value_to_int(v)
+        ),
+        XmlProp.CONST0_UNK8: lambda v: setattr(
+            info, "const0_unk8", string_value_to_int(v)
+        ),
+        XmlProp.BOOL_UNK9: lambda v: setattr(info, "bool_unk9", string_value_to_int(v)),
+        XmlProp.CONST0_UNK10: lambda v: setattr(
+            info, "const0_unk10", string_value_to_int(v)
+        ),
         XmlProp.SPRTY: lambda v: setattr(info, "sprite_type", string_value_to_int(v)),
         XmlProp.IS8BPPSPRITE: lambda v: setattr(
             info, "is_8bpp_sprite", string_value_to_int(v)
@@ -79,7 +85,9 @@ def read_spriteinfo_xml(sprite: BaseSprite, xml_path: Path) -> None:
         XmlProp.PALSLOTSUSED: lambda v: setattr(
             info, "palette_slots_used", string_value_to_int(v)
         ),
-        XmlProp.UNK12: lambda v: setattr(info, "unk12", string_value_to_int(v)),
+        XmlProp.CONST0_UNK12: lambda v: setattr(
+            info, "const0_unk12", string_value_to_int(v)
+        ),
     }
 
     for elem in root:
@@ -146,14 +154,14 @@ def read_frames_xml(sprite: BaseSprite, xml_path: Path) -> None:
                         mf.mosaic = string_value_to_int(value)
                     elif tag == XmlProp.ISABSOLUTEPALETTE:
                         mf.is_absolute_palette = string_value_to_int(value)
-                    elif tag == XmlProp.XOFFBIT7:
-                        mf.x_off_bit7 = string_value_to_int(value)
-                    elif tag == XmlProp.YOFFBIT3:
-                        mf.y_off_bit3 = string_value_to_int(value)
-                    elif tag == XmlProp.YOFFBIT5:
-                        mf.y_off_bit5 = string_value_to_int(value)
-                    elif tag == XmlProp.YOFFBIT6:
-                        mf.y_off_bit6 = string_value_to_int(value)
+                    elif tag == XmlProp.CONST0_XOFFBIT7:
+                        mf.const0_x_off_bit7 = string_value_to_int(value)
+                    elif tag == XmlProp.BOOL_YOFFBIT3:
+                        mf.bool_y_off_bit3 = string_value_to_int(value)
+                    elif tag == XmlProp.CONST0_YOFFBIT5:
+                        mf.const0_y_off_bit5 = string_value_to_int(value)
+                    elif tag == XmlProp.CONST0_YOFFBIT6:
+                        mf.const0_y_off_bit6 = string_value_to_int(value)
 
             mf_idx = len(sprite.metaframes)
             sprite.metaframes.append(mf)

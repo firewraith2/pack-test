@@ -59,5 +59,3 @@ def export_frame_images(sprite: BaseSprite, imgs_dir: Path) -> None:
             img.putpalette([0, 0, 0])
 
         img.save(img_path, "PNG")
-
-    print(f"[OK] {len(sprite.frames)} frame image(s) saved to: {imgs_dir}")

@@ -12,7 +12,7 @@ from data import (
     align_offset,
     pad_bytes,
 )
-from .constants import Sir0, WanFormat
+from .constants import Sir0, PADDING_BYTE
 
 
 def read_sir0_header(data: bytes, offset: int = 0) -> Tuple[int, int, int, int]:
@@ -40,7 +40,7 @@ def decode_pointer_offset_list(data: bytes, offset: int) -> List[int]:
     """
     Decode the SIR0 pointer offset list.
 
-    Implements the exact GfxCrunch DecodeSIR0PtrOffsetList algorithm:
+    Implements the DecodeSIR0PtrOffsetList algorithm:
     - Uses a buffer to accumulate bits
     - Shifts buffer by 7 bits when continuation bit is set
     - Accumulates offsetsum to get absolute offsets
@@ -114,10 +114,10 @@ def encode_pointer_offset_list(offsets: List[int]) -> bytes:
     """
     Encode a list of pointer offsets into SIR0 format.
 
-    GfxCrunch adds the two SIR0 header pointer offsets (4 and 8) first,
+    Add the two SIR0 header pointer offsets (4 and 8) first,
     then encodes all offsets including those.
 
-    This implements the exact GfxCrunch EncodeSIR0PtrOffsetList algorithm:
+    This implements the EncodeSIR0PtrOffsetList algorithm:
     - Calculates deltas between consecutive offsets
     - Encodes each delta in base-128 (7 bits per byte)
     - Uses high bit (0x80) to indicate continuation bytes
@@ -188,7 +188,7 @@ def wrap_sir0(
     aligned_end = align_offset(content_end, 16)
     padding_needed = aligned_end - content_end
     if padding_needed > 0:
-        result.extend(pad_bytes(padding_needed, WanFormat.PADDING_BYTE))
+        result.extend(pad_bytes(padding_needed, PADDING_BYTE))
 
     ptr_list_start = len(result)
     encoded_offsets = encode_pointer_offset_list(pointer_offsets)
@@ -198,7 +198,7 @@ def wrap_sir0(
     aligned_pos = align_offset(final_pos, 16)
     padding_needed = aligned_pos - final_pos
     if padding_needed > 0:
-        result.extend(pad_bytes(padding_needed, WanFormat.PADDING_BYTE))
+        result.extend(pad_bytes(padding_needed, PADDING_BYTE))
 
     header_bytes = write_sir0_header(
         subheader_ptr=content_start + subheader_offset,

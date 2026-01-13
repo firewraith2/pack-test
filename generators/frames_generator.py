@@ -95,6 +95,40 @@ def build_tile_map(images_dict, is_8bpp_sprite=False):
     return tile_map
 
 
+def rearrange_tiles_to_shape(piece, target_height, target_width):
+    piece_height, piece_width = piece.shape
+
+    # Already correct shape
+    if piece_height == target_height and piece_width == target_width:
+        return piece
+
+    # Calculate tile counts
+    piece_tiles_y = piece_height // TILE_SIZE
+    piece_tiles_x = piece_width // TILE_SIZE
+    target_tiles_y = target_height // TILE_SIZE
+    target_tiles_x = target_width // TILE_SIZE
+
+    piece_tile_count = piece_tiles_y * piece_tiles_x
+    target_tile_count = target_tiles_y * target_tiles_x
+
+    if piece_tile_count != target_tile_count:
+        raise ValueError(
+            f"Cannot rearrange: piece has {piece_tile_count} tiles "
+            f"({piece_width}x{piece_height}), target needs {target_tile_count} tiles "
+            f"({target_width}x{target_height})"
+        )
+
+    # Split into tiles, then reshape to target arrangement
+    tiles = piece.reshape(piece_tiles_y, TILE_SIZE, piece_tiles_x, TILE_SIZE)
+    tiles = tiles.swapaxes(1, 2).reshape(-1, TILE_SIZE, TILE_SIZE)
+
+    # Rearrange into target shape
+    tiles = tiles.reshape(target_tiles_y, target_tiles_x, TILE_SIZE, TILE_SIZE)
+    result = tiles.transpose(0, 2, 1, 3).reshape(target_height, target_width)
+
+    return result
+
+
 def build_chunk_from_tilemap(tile_map, start_tile_index, chunk_width, chunk_height):
     tiles_x = chunk_width // TILE_SIZE
     tiles_y = chunk_height // TILE_SIZE
@@ -116,6 +150,7 @@ def reconstruct_frames(
     avoid_overlap,
     global_palette,
     uses_base_sprite: bool = False,
+    input_base_type: Optional[str] = None,
 ):
     # Build images_dict from sprite.frames
     images_dict = {}
@@ -211,19 +246,25 @@ def reconstruct_frames(
 
     chunk_orientation_dict = {}
 
-    def get_oriented_chunk(chunk_id, hflip, vflip):
-        key = (chunk_id, hflip, vflip)
+    def get_oriented_chunk(
+        chunk_id, hflip, vflip, target_height=None, target_width=None
+    ):
+        key = (chunk_id, hflip, vflip, target_height, target_width)
         if key in chunk_orientation_dict:
             return chunk_orientation_dict[key]
 
         # Load base image if not already cached
-        base_key = (chunk_id, 0, 0)
+        base_key = (chunk_id, 0, 0, None, None)
         if base_key not in chunk_orientation_dict:
             chunk_orientation_dict[base_key] = images_dict[chunk_id]["numpy_array"]
 
         arr = chunk_orientation_dict[base_key]
 
-        # Compute the requested orientation
+        # Rearrange tiles if target dimensions specified and different from source
+        if target_height is not None and target_width is not None:
+            arr = rearrange_tiles_to_shape(arr, target_height, target_width)
+
+        # Apply flip AFTER rearranging to target shape
         if hflip and vflip:
             arr = np.flip(arr, axis=(0, 1))
         elif hflip:
@@ -236,6 +277,10 @@ def reconstruct_frames(
 
     tile_map = None
     all_layers_list = []
+
+    # Skip reconstruction if no images (animation-only base)
+    if not images_dict:
+        return tile_map, all_layers_list
 
     # Reconstruct frames
     for frame_id, chunks_info in frames_dict.items():
@@ -276,7 +321,9 @@ def reconstruct_frames(
                     else chunk_id
                 )
 
-                piece = get_oriented_chunk(chunk_id, chunk_hflip, chunk_vflip)
+                piece = get_oriented_chunk(
+                    chunk_id, chunk_hflip, chunk_vflip, chunk_height, chunk_width
+                )
 
                 if piece is None:
                     continue
@@ -323,14 +370,18 @@ def reconstruct_frames(
 
             uses_absolute_palette = is_8bpp_sprite or chunk_is_absolute_palette == 1
 
-            if uses_absolute_palette:
-                if not uses_base_sprite:
-                    palette_slot -= palette_slot_base
-            else:
-                if uses_base_sprite:
-                    palette_slot += palette_slot_base
+            # Don't adjust palette for base sprites
+            if not input_base_type:
+                if uses_absolute_palette:
+                    if not uses_base_sprite:
+                        palette_slot -= palette_slot_base
+                else:
+                    if uses_base_sprite:
+                        palette_slot += palette_slot_base
 
-            palette_slot = max(0, palette_slot)
+            # Clamp palette_slot to valid range [0, max_slot]
+            max_slot = len(global_palette) // (PALETTE_SLOT_COLOR_COUNT * 3) - 1
+            palette_slot = max(0, min(palette_slot, max_slot))
 
             start_index = palette_slot * PALETTE_SLOT_COLOR_COUNT
             mapped_data = np.where(piece != 0, start_index + piece, 0)
@@ -456,68 +507,72 @@ def generate_frames_main(data):
 
     # Merge split 8bpp base files (animation-only + image-only)
     input_base_type = validation_info.get("base_type")
-
-    if (
-        base_sprite
-        and base_validation_info
-        and input_base_type in ("animation", "image")
-    ):
-        base_type = base_validation_info.get("base_type")
-        if input_base_type == "animation" and base_type == "image":
-            print("[INFO] Using images/palette from 8bpp image base sprite")
-            max_memory_used = sprite.spr_info.max_memory_used
-            sprite.frames = base_sprite.frames
-            sprite.palette = base_sprite.palette
-            sprite.spr_info = base_sprite.spr_info
-            sprite.spr_info.max_memory_used = max_memory_used
-            validation_info["requires_base_sprite"] = None
-        elif input_base_type == "image" and base_type == "animation":
-            print("[INFO] Using animations from 8bpp animation base sprite")
-            sprite.metaframes = base_sprite.metaframes
-            sprite.metaframe_groups = base_sprite.metaframe_groups
-            sprite.anim_sequences = base_sprite.anim_sequences
-            sprite.anim_groups = base_sprite.anim_groups
-            sprite.spr_info.max_memory_used = base_sprite.spr_info.max_memory_used
-            normal_mode = any(mf.image_index >= 0 for mf in sprite.metaframes)
-            validation_info["requires_base_sprite"] = None
-
-    requires_base_sprite = validation_info.get("requires_base_sprite")
-    uses_base_sprite = (
-        requires_base_sprite in ("image", "4bpp") and base_sprite is not None
+    uses_base_sprite = False
+    is_8bpp_sprite = (
+        sprite.spr_info.is_8bpp_sprite == 1 or input_base_type == "animation"
     )
 
-    # Palette layout: with base=[base|unique], without base=[unique only]
-    shared_palette = base_sprite.palette if base_sprite else None
-    is_8bpp_sprite = sprite.spr_info.is_8bpp_sprite == 1
+    if base_sprite and base_validation_info:
+        base_type = base_validation_info.get("base_type")
+        if input_base_type in ("animation", "image"):
+            if input_base_type == "animation" and base_type == "image":
+                print("[INFO] Using images/palette from 8bpp image base sprite")
+                max_memory_used = sprite.spr_info.max_memory_used
+                sprite.frames = base_sprite.frames
+                sprite.palette = base_sprite.palette
+                sprite.spr_info = base_sprite.spr_info
+                sprite.spr_info.max_memory_used = max_memory_used
+            elif input_base_type == "image" and base_type == "animation":
+                print("[INFO] Using animations from 8bpp animation base sprite")
+                sprite.metaframes = base_sprite.metaframes
+                sprite.metaframe_groups = base_sprite.metaframe_groups
+                sprite.anim_sequences = base_sprite.anim_sequences
+                sprite.anim_groups = base_sprite.anim_groups
+                sprite.spr_info.max_memory_used = base_sprite.spr_info.max_memory_used
+                normal_mode = any(mf.image_index >= 0 for mf in sprite.metaframes)
+        else:
+            requires_base_sprite = validation_info.get("requires_base_sprite")
 
-    if uses_base_sprite and shared_palette is not None and len(shared_palette) > 0:
-        global_palette = np.array(shared_palette, dtype=np.uint8)
+            if requires_base_sprite == base_type:
+                uses_base_sprite = True
 
-        if sprite.palette.size > 0:
-            palette_slot_base = (
+    if uses_base_sprite and len(base_sprite.palette) > 0:
+        # 8bpp: base=13 slots | 4bpp: base=4 slots
+        base_slots = (
+            PALETTE_SLOT_8BPP_BASE if is_8bpp_sprite else PALETTE_SLOT_4BPP_BASE
+        )
+        bytes_per_slot = PALETTE_SLOT_COLOR_COUNT * 3
+        base_bytes = base_slots * bytes_per_slot
+        max_unique_bytes = (16 - base_slots) * bytes_per_slot
+
+        # Pad/crop base to fixed size, crop unique to remaining space
+        padded_base = np.zeros(base_bytes, dtype=np.uint8)
+        padded_base[: min(len(base_sprite.palette), base_bytes)] = base_sprite.palette[
+            :base_bytes
+        ]
+        cropped_unique = (
+            sprite.palette[:max_unique_bytes]
+            if sprite.palette.size > 0
+            else np.array([], dtype=np.uint8)
+        )
+
+        global_palette = np.concatenate([padded_base, cropped_unique])
+    elif sprite.palette.size > 0:
+        if input_base_type:
+            base_slots = (
                 PALETTE_SLOT_8BPP_BASE if is_8bpp_sprite else PALETTE_SLOT_4BPP_BASE
             )
-            unique_palette_start = palette_slot_base * PALETTE_SLOT_COLOR_COUNT * 3
-            unique_palette_size = len(sprite.palette)
-            unique_palette_end = unique_palette_start + unique_palette_size
-
-            if unique_palette_end > 768:  # 256 colors * 3 bytes
-                raise ValueError(
-                    f"Merged palette uses {unique_palette_end // 3} colors, "
-                    "exceeding the 256 color limit (Base + Unique combined)."
-                )
-
-            if unique_palette_end <= len(global_palette):
-                global_palette[unique_palette_start:unique_palette_end] = sprite.palette
+            max_base_bytes = base_slots * PALETTE_SLOT_COLOR_COUNT * 3
+            # Crop if larger, pad if smaller
+            if len(sprite.palette) > max_base_bytes:
+                global_palette = sprite.palette[:max_base_bytes]
+            elif len(sprite.palette) < max_base_bytes:
+                global_palette = np.zeros(max_base_bytes, dtype=np.uint8)
+                global_palette[: len(sprite.palette)] = sprite.palette
             else:
-                extended_palette = np.zeros(unique_palette_end, dtype=np.uint8)
-                extended_palette[: len(global_palette)] = global_palette
-                extended_palette[unique_palette_start:unique_palette_end] = (
-                    sprite.palette
-                )
-                global_palette = extended_palette
-    elif sprite.palette.size > 0:
-        global_palette = sprite.palette
+                global_palette = sprite.palette
+        else:
+            global_palette = sprite.palette
     else:
         global_palette = np.zeros(PALETTE_SLOT_RGB_COUNT, dtype=np.uint8)
 
@@ -528,6 +583,7 @@ def generate_frames_main(data):
         avoid_overlap,
         global_palette,
         uses_base_sprite,
+        input_base_type,
     )
 
     if output_folder is not None:

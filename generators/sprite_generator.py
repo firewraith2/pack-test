@@ -427,6 +427,18 @@ def format_chunk_track_dict(chunk_track_dict):
     return formatted_dict
 
 
+def pad_palette_to_slots(palette_data, target_rgb_len):
+    """Pad palette to fill complete slots (multiples of PALETTE_SLOT_RGB_COUNT)."""
+    palette_list = list(palette_data)
+    # Pad to at least target_rgb_len, then to complete slot
+    if len(palette_list) < target_rgb_len:
+        palette_list += [0] * (target_rgb_len - len(palette_list))
+    remainder = len(palette_list) % PALETTE_SLOT_RGB_COUNT
+    if remainder:
+        palette_list += [0] * (PALETTE_SLOT_RGB_COUNT - remainder)
+    return np.array(palette_list, dtype=np.uint8)
+
+
 def populate_palette(
     sprite: BaseSprite,
     original_shared_palette,
@@ -434,33 +446,30 @@ def populate_palette(
     is_8bpp_sprite=False,
     is_base_sprite=False,
 ):
-    # Calculate base palette RGB threshold
-    palette_slot_rgb = (
+    base_rgb = (
         PALETTE_SLOT_8BPP_BASE if is_8bpp_sprite else PALETTE_SLOT_4BPP_BASE
     ) * PALETTE_SLOT_RGB_COUNT
 
     if is_base_sprite:
-        # Base sprites: save only base palette slots [0:threshold]
-        sprite.palette = np.array(
-            original_shared_palette[:palette_slot_rgb], dtype=np.uint8
+        # Base sprites: use [0:base_rgb], pad to fill all base slots
+        sprite.palette = pad_palette_to_slots(
+            original_shared_palette[:base_rgb], base_rgb
         )
     elif used_base_palette:
-        # Standalone with base palette: skip base slots [threshold:]
-        sprite.palette = np.array(
-            original_shared_palette[palette_slot_rgb:], dtype=np.uint8
-        )
+        # Standalone with base palette: use [base_rgb:], pad to complete slot
+        sprite.palette = pad_palette_to_slots(original_shared_palette[base_rgb:], 0)
     else:
-        # Standalone without base palette: save full palette
-        sprite.palette = np.array(original_shared_palette, dtype=np.uint8)
+        # Standalone: use full palette, pad to complete slot
+        sprite.palette = pad_palette_to_slots(original_shared_palette, 0)
 
 
-def _calc_memory_blocks(width, height, is_8bpp):
+def calc_memory_blocks(width, height, is_8bpp):
     # 4bpp: 256 pixels per block, 8bpp: 128 pixels per block
     block_size = 128 if is_8bpp else 256
     return ((height * width) + block_size - 1) // block_size
 
 
-def _build_global_chunk_offsets(formatted_chunk_track_dict, is_8bpp):
+def build_global_chunk_offsets(formatted_chunk_track_dict, is_8bpp):
     chunk_dimensions = {}
     for chunks in formatted_chunk_track_dict.values():
         for chunk in chunks:
@@ -473,7 +482,7 @@ def _build_global_chunk_offsets(formatted_chunk_track_dict, is_8bpp):
     for chunk_id in sorted(chunk_dimensions.keys()):
         offsets[chunk_id] = current
         w, h = chunk_dimensions[chunk_id]
-        current += _calc_memory_blocks(w, h, is_8bpp)
+        current += calc_memory_blocks(w, h, is_8bpp)
 
     return offsets, current
 
@@ -493,7 +502,7 @@ def populate_metaframes_data(
     global_offsets = {}
     total_memory = 0
     if use_tiles_mode:
-        global_offsets, total_memory = _build_global_chunk_offsets(
+        global_offsets, total_memory = build_global_chunk_offsets(
             formatted_chunk_track_dict, is_8bpp_sprite
         )
 
@@ -518,7 +527,7 @@ def populate_metaframes_data(
                 image_index = chunk_id
                 memory_offset = local_memory
                 local_offsets[chunk_id] = memory_offset
-                local_memory += _calc_memory_blocks(dim[0], dim[1], is_8bpp_sprite)
+                local_memory += calc_memory_blocks(dim[0], dim[1], is_8bpp_sprite)
 
             # Create metaframe
             mf = MetaFrame()
@@ -547,8 +556,8 @@ def populate_metaframes_data(
             mf.h_flip = chunk["orientation"][1]
             mf.mosaic = 0
             mf.is_absolute_palette = 1
-            mf.y_off_bit3 = int(is_8bpp_sprite)
-            mf.x_off_bit7 = mf.y_off_bit5 = mf.y_off_bit6 = 0
+            mf.bool_y_off_bit3 = int(is_8bpp_sprite)
+            mf.const0_x_off_bit7 = mf.const0_y_off_bit5 = mf.const0_y_off_bit6 = 0
 
             sprite.metaframes.append(mf)
             group.metaframes.append(len(sprite.metaframes) - 1)
@@ -593,29 +602,29 @@ def populate_sprite_info(
     use_tiles_mode=False,
     is_8bpp_sprite=False,
     sprite_type=DEFAULT_UNK_VALUE,
-    is_unk3_true=False,
+    is_bool_unk3_true=False,
     unk4=DEFAULT_UNK_VALUE,
     unk5=DEFAULT_UNK_VALUE,
-    is_unk9_true=False,
+    is_bool_unk9_true=False,
 ):
     colors_in_palette = sprite.palette.shape[0] // 3
     info = sprite.spr_info
-    info.unk3 = int(is_unk3_true)  # Boolean Flag
+    info.bool_unk3 = int(is_bool_unk3_true)  # Boolean Flag
     info.max_colors_used = colors_in_palette
     info.unk4 = unk4  # ['0x0', '0x10']
     info.unk5 = unk5  # ['0x0', '0xFF', '0x10D']
     info.max_memory_used = max_memory_used
-    info.unk7 = DEFAULT_UNK_VALUE  # Always 0
-    info.unk8 = DEFAULT_UNK_VALUE  # Always 0
-    info.unk9 = int(is_unk9_true)  # Boolean Flag
-    info.unk10 = DEFAULT_UNK_VALUE  # Always 0
+    info.const0_unk7 = DEFAULT_UNK_VALUE  # Always 0
+    info.const0_unk8 = DEFAULT_UNK_VALUE  # Always 0
+    info.bool_unk9 = int(is_bool_unk9_true)  # Boolean Flag
+    info.const0_unk10 = DEFAULT_UNK_VALUE  # Always 0
     info.sprite_type = sprite_type  # ['0x0', '0x1', '0x2']
     info.is_8bpp_sprite = int(is_8bpp_sprite)
     info.tiles_mode = int(use_tiles_mode)
     info.palette_slots_used = (
         1 if is_8bpp_sprite else colors_in_palette // PALETTE_SLOT_COLOR_COUNT
     )
-    info.unk12 = DEFAULT_UNK_VALUE  # Always 0
+    info.const0_unk12 = DEFAULT_UNK_VALUE  # Always 0
 
 
 def save_unique_chunk_in_dict(
@@ -715,11 +724,9 @@ def save_remaining_chunks(
         if chunk_height > image_height or chunk_width > image_width:
             continue
 
-        chunk_message = f"\n[SCANNING] Scanning for remaining chunks of size ({chunk_width}x{chunk_height})"
-        if DEBUG:
-            chunk_message = f"\n{'-'*SEPARATOR_LINE_LENGTH}{chunk_message}\n{'-'*SEPARATOR_LINE_LENGTH}\n"
-
-        print(chunk_message)
+        print(
+            f"\n[SCANNING] Scanning for remaining chunks of size ({chunk_width}x{chunk_height})..."
+        )
 
         for image_name, image_info in images_dict.items():
             current_image_tile_hash_dict = image_info["tile_hash_dict"]
@@ -1022,8 +1029,9 @@ def save_repeated_chunks(
     min_row_column_density,
 ):
     if intra_scan:
-
         for frame_no, frame_layers in frame_layes_name_dict.items():
+
+            print(f"\n[SCANNING] Scanning Frame-{frame_no} for repeated chunks...")
 
             for chunk_width, chunk_height in scan_chunk_sizes:
 
@@ -1031,13 +1039,6 @@ def save_repeated_chunks(
                     continue
 
                 chunk_size_specific_dict = {}
-
-                chunk_message = f"\n[SCANNING] Scanning for repeated chunks of size ({chunk_width}x{chunk_height}) in Frame-{frame_no}"
-
-                if DEBUG:
-                    chunk_message = f"\n{'-'*SEPARATOR_LINE_LENGTH}{chunk_message}\n{'-'*SEPARATOR_LINE_LENGTH}\n"
-
-                print(chunk_message)
 
                 for layer_name, _ in frame_layers:
 
@@ -1057,17 +1058,14 @@ def save_repeated_chunks(
     if inter_scan:
         for chunk_width, chunk_height in scan_chunk_sizes:
 
+            print(
+                f"\n[SCANNING] Scanning across images for chunks of size ({chunk_width}x{chunk_height})..."
+            )
+
             if chunk_height > image_height or chunk_width > image_width:
                 continue
 
             chunk_size_specific_dict = {}
-
-            chunk_message = f"\n[SCANNING] Scanning across images for repeated chunks of size ({chunk_width}x{chunk_height})"
-
-            if DEBUG:
-                chunk_message = f"\n{'-'*SEPARATOR_LINE_LENGTH}{chunk_message}\n{'-'*SEPARATOR_LINE_LENGTH}\n"
-
-            print(chunk_message)
 
             for current_image_name in images_dict:
 
@@ -1198,7 +1196,7 @@ def do_debug_exclusive_stuff(
 def give_sprite_overview(
     max_memory_used,
     frame_memory_usage,
-    max_colors_used,
+    sprite,
     total_unique_chunks,
     formatted_chunk_track_dict,
     sprite_category,
@@ -1210,18 +1208,15 @@ def give_sprite_overview(
     print("\nSprite Info:")
     print(f"[INFO] Maximum Memory Used by Animation: {max_memory_used}")
 
-    if max_memory_used > limits["max_memory"]:
-        print(
-            f"[ERROR] Memory limit exceeded — this will cause in-game issues."
-            f"\n[INFO] Allowed maximum memory offset: {limits['max_memory']}"
-        )
-    elif max_memory_used > limits["base_game_memory"]:
+    if max_memory_used > limits["base_game_memory"]:
         print(
             f"[WARNING] High memory usage — may cause in-game issues."
             f"\n[INFO] Base-game sprites only use up to {limits['base_game_memory']} memory."
         )
 
-    print(f"[INFO] Total Colors Used: {max_colors_used}")
+    total_colors_used = sprite.palette.shape[0] // 3
+
+    print(f"[INFO] Total Colors Used: {total_colors_used}")
 
     print(f"[INFO] Total Unique Chunks: {total_unique_chunks}")
     if total_unique_chunks > limits["base_game_unique_chunks"]:
@@ -1258,7 +1253,7 @@ def generate_sprite_main(data):
               scan_chunk_sizes, intra_scan, inter_scan, export_as_wan,
               sprite_category, custom_properties)
     """
-    print("[START] Starting Sprite Generation...")
+    print("[GENERATING] Starting Sprite Generation...")
 
     (
         input_folder,
@@ -1291,10 +1286,10 @@ def generate_sprite_main(data):
     )
     is_8bpp_sprite = cfg["is_8bpp"]
     sprite_type = cfg["sprite_type"]
-    is_unk3_true = cfg["unk3"]
+    is_bool_unk3_true = cfg["bool_unk3"]
     unk4 = cfg["unk4"]
     unk5 = cfg["unk5"]
-    is_unk9_true = cfg["unk9"]
+    is_bool_unk9_true = cfg["bool_unk9"]
     cfg_used_base_palette = cfg.get("used_base_palette", None)
     used_base_palette = (
         custom_properties.get("used_base_palette", False)
@@ -1395,6 +1390,11 @@ def generate_sprite_main(data):
 
     max_memory_used = max(frame_memory_usage)
 
+    if max_memory_used > 255:
+        raise ValueError(
+            f"Memory overflow: max memory ({max_memory_used}) exceeds 255."
+        )
+
     # Populate animations
     populate_animations_data(sprite, available_frames, animation_group)
 
@@ -1405,10 +1405,10 @@ def generate_sprite_main(data):
         use_tiles_mode,
         is_8bpp_sprite,
         sprite_type,
-        is_unk3_true,
+        is_bool_unk3_true,
         unk4,
         unk5,
-        is_unk9_true,
+        is_bool_unk9_true,
     )
 
     # Export helper function
@@ -1438,10 +1438,10 @@ def generate_sprite_main(data):
         animation_base.spr_info.tiles_mode = int(cfg["animation_base_tiles_mode"])
         animation_base.spr_info.is_8bpp_sprite = int(cfg["animation_base_is_8bpp"])
         animation_base.spr_info.sprite_type = cfg["animation_base_sprite_type"]
-        animation_base.spr_info.unk3 = int(cfg["animation_base_unk3"])
+        animation_base.spr_info.bool_unk3 = int(cfg["animation_base_bool_unk3"])
         animation_base.spr_info.unk4 = cfg["animation_base_unk4"]
         animation_base.spr_info.unk5 = cfg["animation_base_unk5"]
-        animation_base.spr_info.unk9 = int(cfg["animation_base_unk9"])
+        animation_base.spr_info.bool_unk9 = int(cfg["animation_base_bool_unk9"])
 
         # Clear animation data and max_memory_used from sprite (now image_base)
         sprite.metaframes = []
@@ -1462,7 +1462,7 @@ def generate_sprite_main(data):
     give_sprite_overview(
         max_memory_used,
         frame_memory_usage,
-        max_colors_used,
+        sprite,
         total_unique_chunks,
         formatted_chunk_track_dict,
         sprite_category,

@@ -31,16 +31,16 @@ def read_int32(data: bytes, offset: int, little_endian: bool = True) -> int:
 
 def write_uint32(value: int, little_endian: bool = True) -> bytes:
     fmt = "<I" if little_endian else ">I"
-    return struct.pack(fmt, value & 0xFFFFFFFF)
+    return struct.pack(fmt, value)
 
 
 def write_uint16(value: int, little_endian: bool = True) -> bytes:
     fmt = "<H" if little_endian else ">H"
-    return struct.pack(fmt, value & 0xFFFF)
+    return struct.pack(fmt, value)
 
 
 def write_uint8(value: int) -> bytes:
-    return struct.pack("B", value & 0xFF)
+    return struct.pack("B", value)
 
 
 def write_int16(value: int, little_endian: bool = True) -> bytes:
@@ -61,8 +61,6 @@ def read_file_to_bytes(filepath: Path) -> bytes:
 def write_bytes_to_file(filepath: Path, data: bytes) -> None:
     with open(filepath, "wb") as f:
         f.write(data)
-
-    print(f"[OK] {filepath.name} saved to: {filepath}")
 
 
 def align_offset(offset: int, alignment: int) -> int:
@@ -124,8 +122,6 @@ def write_xml_file(root: ET.Element, output_path: Path) -> None:
     tree = ET.ElementTree(root)
     ET.indent(tree, space="    ")
     tree.write(output_path, encoding="utf-8", xml_declaration=True)
-
-    print(f"[OK] {output_path.name} saved to: {output_path}")
 
 
 def normalize_string(display_name: str) -> str:

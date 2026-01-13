@@ -58,10 +58,10 @@ class MetaFrame:
     h_flip: int = 0
     mosaic: int = 0
     is_absolute_palette: int = 0
-    x_off_bit7: int = 0
-    y_off_bit3: int = 0
-    y_off_bit5: int = 0
-    y_off_bit6: int = 0
+    const0_x_off_bit7: int = 0
+    bool_y_off_bit3: int = 0
+    const0_y_off_bit5: int = 0
+    const0_y_off_bit6: int = 0
     anim_refs: List[Tuple[int, int]] = field(default_factory=list)
 
 
@@ -131,16 +131,16 @@ class SprInfo:
     sprite_type: int = 0
     is_8bpp_sprite: int = 0  # 1 for 8bpp, 0 for 4bpp
     max_colors_used: int = 0
-    unk3: int = 0
+    bool_unk3: int = 0
     unk4: int = 0
     unk5: int = 0
     max_memory_used: int = 0
-    unk7: int = 0
-    unk8: int = 0
-    unk9: int = 0
-    unk10: int = 0
+    const0_unk7: int = 0
+    const0_unk8: int = 0
+    bool_unk9: int = 0
+    const0_unk10: int = 0
     palette_slots_used: int = 0
-    unk12: int = 0
+    const0_unk12: int = 0
     tiles_mode: int = 0  # 1 for tile-based assembly, 0 for chunk-based
 
 
@@ -290,7 +290,11 @@ class BaseSprite:
                     max_tiles_required = tiles_required
             else:
                 has_normal_metaframe = True
-                if mf.image_index < 0 or mf.image_index >= num_frames:
+                if (
+                    mf.image_index < 0
+                    or mf.image_index >= num_frames
+                    and not is_animation_base
+                ):
                     errors.append(
                         f"MetaFrame[{mf_idx}]: Invalid image_index {mf.image_index}, "
                         f"must be {WanFormat.SPECIAL_META_FRAME_ID} (special) or in range [0, {num_frames - 1}]"

@@ -2,6 +2,8 @@
 WAN file format constants.
 """
 
+PADDING_BYTE = 0xAA
+
 
 class Sir0:
     MAGIC = 0x53495230
@@ -11,8 +13,6 @@ class Sir0:
 class WanFormat:
     LENGTH_META_FRM = 10
     LENGTH_ANIM_FRM = 12
-    IMG_ASM_TBL_ENTRY_LEN = 12
-    PADDING_BYTE = 0xAA
     SPECIAL_META_FRAME_ID = -1
 
 
