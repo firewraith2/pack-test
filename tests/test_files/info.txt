@@ -1,0 +1,4 @@
+Place your test files in this folder:
+
+1. rom.nds
+2. effect.bin
